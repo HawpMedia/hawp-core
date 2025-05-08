@@ -1,0 +1,37 @@
+/**
+ * Admin styles.
+ */
+
+/* Block Editor -------------------------- */
+.editor-styles-wrapper {
+	font-size: 125% !important;
+}
+
+.editor-styles-wrapper > * {
+	width: 100% !important;
+	max-width: 1400px !important;
+	margin-left: auto !important;
+	margin-right: auto !important;
+}
+
+.editor-styles-wrapper > * {
+	width: calc(100% - 20px) !important;
+}
+
+/* Widget Editor ------------------------- */
+.blocks-widgets-container .editor-styles-wrapper {
+	max-width: 100% !important;
+}
+
+/* Block: Container ---------------------- */
+.editor-styles-wrapper .container {
+	border: 1px dashed #e0e0e0;
+}
+
+/* ACF Pro ------------------------------- */
+.acf-field.minimal tr.acf-row .acf-field,
+.acf-field.minimal tr.acf-row .acf-field .acf-input-wrap > * {
+	padding: 2px;
+	font-size: 10px;
+	color: #000;
+}
