@@ -80,7 +80,7 @@ class Hawp_Theme_Options {
         // Add the main page as a top-level menu item
         add_menu_page(
             __('Theme Options'),
-            __('Hawp Theme'),
+            hawp_theme()::$theme['name'],
             'manage_options',
             $this->page_slug,
             [$this, 'render_options_page'],
