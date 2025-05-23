@@ -3,9 +3,9 @@
 // This file loads the theme.
 // ------------------------------------------
 
-if (!class_exists('Hawp_Core_Theme')):
+if (!class_exists('Hawp_Theme')):
 
-class Hawp_Core_Theme {
+class Hawp_Theme {
 
 	public static $theme = [
 		'name'                => 'Hawp Core',
@@ -56,17 +56,17 @@ class Hawp_Core_Theme {
 }
 
 /**
- * Initialize Hawp_Core_Theme class with a function.
+ * Initialize Hawp_Theme class with a function.
  */
-function hawp_core_theme() {
-	global $hawp_core_theme;
+function hawp_theme() {
+	global $hawp_theme;
 
 	// Instantiate only once.
-	if (!isset($hawp_core_theme)) {
-		$hawp_core_theme = new Hawp_Core_Theme();
+	if (!isset($hawp_theme)) {
+		$hawp_theme = new Hawp_Theme();
 	}
-	return $hawp_core_theme;
+	return $hawp_theme;
 }
-hawp_core_theme();
+hawp_theme();
 
 endif; // class_exists check
