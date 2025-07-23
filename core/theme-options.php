@@ -385,6 +385,14 @@ class Hawp_Theme_Options {
      * Migrate ACF options to new format
      */
     private function migrate_acf_options() {
+        // Check if migration has already been completed
+        $migration_version = '1.0';
+        $migration_completed = get_option($this->option_prefix . 'acf_migration_completed');
+        
+        if ($migration_completed === $migration_version) {
+            return; // Migration already completed
+        }
+
         // Field definitions for migration
         $general_fields = [
             'logo',
@@ -439,6 +447,7 @@ class Hawp_Theme_Options {
             $admin_ui_fields
         );
 
+        $migrated_count = 0;
         foreach ($fields as $field) {
             $old_option = 'options_' . $this->option_prefix . $field;
             $new_option = $this->option_prefix . $field;
@@ -454,9 +463,18 @@ class Hawp_Theme_Options {
                     if (update_option($new_option, $old_value)) {
                         // Only delete the old option if migration was successful
                         delete_option($old_option);
+                        $migrated_count++;
                     }
                 }
             }
+        }
+
+        // Mark migration as completed
+        update_option($this->option_prefix . 'acf_migration_completed', $migration_version);
+        
+        // Log migration completion (optional)
+        if ($migrated_count > 0) {
+            error_log("Hawp Theme: Migrated {$migrated_count} ACF options to new format");
         }
     }
 
@@ -530,7 +548,12 @@ class Hawp_Theme_Options {
         ?>
 
         <input type="hidden" name="<?php echo esc_attr($args['name']); ?>" id="<?php echo esc_attr($args['name']); ?>" value="<?php echo esc_attr($value); ?>" />
-        <input type="button" class="button button-secondary" value="<?php _e('Select Image'); ?>" onclick="hawpSelectImage('<?php echo esc_attr($args['name']); ?>')" />
+        <div class="hawp-image-controls">
+            <input type="button" class="button button-secondary" value="<?php _e('Select Image'); ?>" onclick="hawpSelectImage('<?php echo esc_attr($args['name']); ?>')" />
+            <?php if ($value) : ?>
+                <input type="button" class="button button-link-delete" value="<?php _e('Remove Image'); ?>" onclick="hawpRemoveImage('<?php echo esc_attr($args['name']); ?>')" />
+            <?php endif; ?>
+        </div>
         <div id="<?php echo esc_attr($args['name']); ?>_preview" class="hawp-image-preview">
             <?php if ($value) : ?>
                 <?php echo wp_get_attachment_image($value, 'thumbnail'); ?>
@@ -629,9 +652,9 @@ class Hawp_Theme_Options {
         <div id="hm-admin-toolbar" class="hm-admin-toolbar">
             <div class="hm-admin-toolbar-inner">
                 <div class="hm-nav-wrap">
-                    <a href="<?php echo admin_url('themes.php?page=' . $this->page_slug); ?>" class="hm-logo">
+                    <!-- <a href="<?php echo admin_url('themes.php?page=' . $this->page_slug); ?>" class="hm-logo">
                         <img src="http://hawpv6.local/wp-content/plugins/advanced-custom-fields-pro/assets/images/acf-pro-logo.svg" alt="Advanced Custom Fields logo">
-                    </a>
+                    </a> -->
 
                     <?php 
                     // Only show General and Integration in main nav
@@ -679,7 +702,7 @@ class Hawp_Theme_Options {
                 </div>
                 <div class="hm-nav-upgrade-wrap">
                     <a href="https://hawpmedia.com/?utm_source=hm_theme&amp;utm_medium=referral&amp;utm_content=hm_theme_topbar_logo" target="_blank" class="hm-nav-hawp-logo">
-                        <img src="http://hawpv6.local/wp-content/plugins/advanced-custom-fields-pro/assets/images/wp-engine-horizontal-white.svg" alt="Hawp Media logo">
+                        <?php echo hawp_theme()::$theme['name']; ?>
                     </a>
                 </div>
             </div>
@@ -857,19 +880,73 @@ class Hawp_Theme_Options {
             <?php settings_errors(); ?>
 
             <?php if ($this->current_tab === 'custom_settings' && function_exists('acf_form')) {
+                // Check if custom fields are registered
+                $has_custom_fields = false;
+                if (function_exists('acf_get_field_group')) {
+                    $field_group = acf_get_field_group('group_custom_settings');
+                    $has_custom_fields = ($field_group !== false);
+                }
+
                 echo '<div class="hm-settings-box">';
                 echo '<div class="hm-settings-box-header">';
                 echo '<h3>Custom Settings</h3>';
                 echo '</div>';
                 echo '<div class="hm-settings-box-content">';
-                acf_form_head();
-                acf_form([
-                    'post_id' => 'options',
-                    'field_groups' => ['group_custom_settings'],
-                    'form' => true,
-                    'return' => false,
-                    'submit_value' => 'Save Custom Options',
-                ]);
+                
+                if (!$has_custom_fields) {
+                    echo '<div class="notice notice-info">';
+                    echo '<p>Not sure how you ended up here! If you\'re not a developer, there\'s nothing to see here. If you are, then continue reading. </p>';
+                    echo '<p>To add custom settings, navigate to your child theme\'s functions.php file and add them to the group <code>group_custom_settings</code> using the <code>acf_add_local_field_group</code> function.</p>';
+                    echo '<p>Here\'s an example of what this could look like:</p>';
+                    echo '<pre><code>function add_acf_custom_settings() {
+    acf_add_local_field_group([
+        \'key\' => \'group_custom_settings\',
+        \'title\' => \'Custom Settings\',
+        \'fields\' => [
+            [
+                \'key\' => \'field_custom_text\',
+                \'label\' => \'Custom Text Field\',
+                \'name\' => \'custom_text\',
+                \'type\' => \'text\',
+                \'instructions\' => \'Enter some custom text\',
+                \'required\' => 0,
+            ],
+            [
+                \'key\' => \'field_custom_image\',
+                \'label\' => \'Custom Image\',
+                \'name\' => \'custom_image\',
+                \'type\' => \'image\',
+                \'return_format\' => \'id\',
+                \'preview_size\' => \'thumbnail\',
+                \'library\' => \'all\',
+            ],
+        ],
+        \'location\' => [[[
+            \'param\' => \'options_page\',
+            \'operator\' => \'==\',
+            \'value\' => \'hm-theme-options-custom_settings\',
+        ]]],
+        \'menu_order\' => 0,
+        \'position\' => \'normal\',
+        \'style\' => \'default\',
+        \'label_placement\' => \'top\',
+        \'instruction_placement\' => \'label\',
+        \'hide_on_screen\' => \'\',
+        \'active\' => true,
+    ]);
+}
+add_action(\'acf/init\', \'add_acf_custom_settings\', 5);</code></pre>';
+                    echo '</div>';
+                } else {
+                    acf_form_head();
+                    acf_form([
+                        'post_id' => 'options',
+                        'field_groups' => ['group_custom_settings'],
+                        'form' => true,
+                        'return' => false,
+                        'submit_value' => 'Save Custom Options',
+                    ]);
+                }
                 echo '</div>';
                 echo '</div>';
                 
