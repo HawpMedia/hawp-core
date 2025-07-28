@@ -12,13 +12,16 @@ Hawp Core is Hawp Media's boilerplate starter theme for all custom websites
 
 == Changelog ==
 
+= 1.0.0 =
+* First Release: Jul 28, 2025
+
 = 0.0.1 =
 * Initial Release: May 8, 2025
 
 == Copyright ==
 
 Hawp Core WordPress Theme, (C) 2025 WordPress.org
-Hawp Core and Hawp Child are distributed under the terms of the GNU GPL.
+Hawp Core and Hawp Skin are distributed under the terms of the GNU GPL.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
