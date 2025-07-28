@@ -411,7 +411,6 @@ code {
 .form-table input[type="url"],
 .form-table textarea {
     width: 100%;
-    max-width: 500px;
 }
 
 .form-table textarea.large-text {
@@ -640,11 +639,31 @@ code {
 
 
 .hm-settings-field {
-	margin-bottom: 20px;
-	padding: 15px;
+	position: relative;
+	margin-bottom: 0;
+	padding: 15px 0;
 	background: #fff;
-	border: 1px solid #ccd0d4;
-	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+	border: 0;
+	box-shadow: none;
+}
+.hm-settings-field:after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	display: block;
+	width: 100%;
+	height: 1px;
+	background: #eaecf0;
+}
+.hm-settings-field:first-of-type {
+    padding-top: 0;
+}
+.hm-settings-field:last-of-type {
+	padding-bottom: 0;
+}
+.hm-settings-field:last-of-type:after {
+	display: none;
 }
 .hm-settings-label {
 	margin-bottom: 8px;
@@ -658,11 +677,11 @@ code {
 .hm-settings-input input[type="number"],
 .hm-settings-input textarea {
 	width: 100%;
-	max-width: 500px;
 }
 .hm-settings-input .description {
 	margin-top: 8px;
 	color: #666;
+	font-style: italic;
 }
 
 
@@ -708,9 +727,6 @@ code {
 .hm-settings-box-content {
 	padding: 24px;
 }
-.hm-settings-field {
-	margin-bottom: 15px;
-}
 .hm-settings-field:last-child {
 	margin-bottom: 0;
 }
@@ -721,23 +737,9 @@ code {
 .hm-settings-input {
 	margin-top: 8px;
 }
-.hm-settings-input input[type="text"],
-.hm-settings-input input[type="url"],
-.hm-settings-input input[type="number"],
-.hm-settings-input textarea {
-	width: 100%;
-	max-width: 500px;
-}
-.hm-settings-input .description {
-	margin-top: 8px;
-	color: #666;
-}
 
 
 
-.hawp-svg-library {
-	margin-bottom: 20px;
-}
 .hawp-svg-item {
 	margin-bottom: 15px;
 	padding: 10px;
