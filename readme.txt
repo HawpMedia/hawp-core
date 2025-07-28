@@ -1,14 +1,14 @@
-=== Hawp Theme ===
+=== Hawp Core ===
 Requires at least: 6.4
 Tested up to: 6.6.1
-Requires PHP: 7.0
-Stable tag: 6.5.1
+Requires PHP: 7.4
+Stable tag: 6.8.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 == Description ==
 
-Kernel Core is Hawp Media's boilerplate starter theme for all custom websites
+Hawp Core is Hawp Media's boilerplate starter theme for all custom websites
 
 == Changelog ==
 
@@ -17,8 +17,8 @@ Kernel Core is Hawp Media's boilerplate starter theme for all custom websites
 
 == Copyright ==
 
-Kernel Core WordPress Theme, (C) 2025 WordPress.org
-Kernek Core and Kernel Canvas are distributed under the terms of the GNU GPL.
+Hawp Core WordPress Theme, (C) 2025 WordPress.org
+Hawp Core and Hawp Child are distributed under the terms of the GNU GPL.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
