@@ -12,7 +12,7 @@ Hawp Core is Hawp Media's boilerplate starter theme for all custom websites
 
 == Changelog ==
 
-= 1.0.0 =
+= 0.0.1 =
 * Initial Release: May 8, 2025
 
 == Copyright ==
