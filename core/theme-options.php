@@ -635,6 +635,30 @@ class Hawp_Theme_Options {
             return;
         }
 
+        // Exclude Freemius pages (they start with hm-theme-options- but are not theme options pages)
+        $current_page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
+        
+        // Check if this is a valid theme options tab
+        $is_valid_theme_options_page = false;
+        
+        // Check if it's the main theme options page
+        if ($current_page === $this->page_slug) {
+            $is_valid_theme_options_page = true;
+        } else {
+            // Check if it's a valid theme options tab
+            foreach ($this->tab_pages as $tab_id => $tab_name) {
+                if ($current_page === $this->page_slug . '-' . $tab_id) {
+                    $is_valid_theme_options_page = true;
+                    break;
+                }
+            }
+        }
+        
+        // If it's not a valid theme options page, don't render the header
+        if (!$is_valid_theme_options_page) {
+            return;
+        }
+
         $current_page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : $this->page_slug;
         $active_tab = str_replace($this->page_slug . '-', '', $current_page);
         if ($active_tab === $this->page_slug) {
