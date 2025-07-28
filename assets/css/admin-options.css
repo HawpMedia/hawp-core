@@ -678,16 +678,17 @@ code {
 }
 .hm-settings-box-header {
 	display: flex;
-	align-items: center;
+	flex-direction: column;
+    align-items: flex-start;
 	box-sizing: border-box;
 	min-height: 64px;
 	margin-top: 0;
 	margin-right: 0;
 	margin-bottom: 0;
 	margin-left: 0;
-	padding-top: 0;
+	padding-top: 12px;
 	padding-right: 24px;
-	padding-bottom: 0;
+	padding-bottom: 12px;
 	padding-left: 24px;
 	border-bottom: 1px solid #eaecf0;
 }
@@ -699,6 +700,10 @@ code {
     justify-content: flex-start;
     align-content: stretch;
     align-items: center;
+}
+.hm-settings-box-header > *:last-child {
+	margin-bottom: 0;
+	padding-bottom: 0;
 }
 .hm-settings-box-content {
 	padding: 24px;
