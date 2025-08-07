@@ -187,31 +187,49 @@ class Hawp_Theme_Setup {
 		}
 
 		// Localize theme options to hm-child-script
-		$prefix = hawp_theme()::$theme['option_prefix']; // Get our theme option prefix
-		$all_options = get_fields('option'); // Get all ACF fields from the options page.
-		$theme_data  = array();
+		$theme_data = array();
 
-		// Array of keys to exclude (after prefix removal)
-		$exclude_keys = array('head_code', 'body_code', 'footer_code', 'svgs');
+		// Array of keys to exclude from being passed to JavaScript
+		$exclude_keys = array('head_code', 'body_code', 'footer_code', 'svgs', 'acf_migration_completed');
 
-		if ( !empty($all_options) ) {
-			foreach ( $all_options as $key => $value ) {
-				// Only process fields with your dynamic prefix.
-				if ( strpos($key, $prefix) === 0 ) {
-					// Optionally remove the prefix from the key for a cleaner JS object.
-					$option_key = str_replace($prefix, '', $key);
+		// Get all theme options dynamically from the database
+		$prefix = hawp_theme()::$theme['option_prefix'];
+		global $wpdb;
+		$options = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s",
+				$prefix . '%'
+			)
+		);
 
-					// Skip any keys that are in the exclude list.
-					if (in_array($option_key, $exclude_keys)) {
-						continue;
+		// Process the options and exclude unwanted ones
+		if (!empty($options)) {
+			foreach ($options as $option) {
+				// Remove the prefix from the key for a cleaner JS object
+				$key = str_replace($prefix, '', $option->option_name);
+				$value = $option->option_value;
+
+				// Skip any keys that are in the exclude list
+				if (in_array($key, $exclude_keys)) {
+					continue;
+				}
+
+				// Check if the value is numeric and corresponds to a valid post
+				if (is_numeric($value)) {
+					// Check if it's an image attachment
+					if (wp_attachment_is_image($value)) {
+						$theme_data[$key] = wp_get_attachment_url($value);
+					} 
+					// Check if it's a valid post
+					elseif (get_post($value)) {
+						$theme_data[$key] = get_permalink($value);
+					} 
+					// Otherwise, just use the value as-is
+					else {
+						$theme_data[$key] = $value;
 					}
-
-					// Check if the value is numeric and corresponds to a valid post.
-					if ( is_numeric($value) && get_post($value) ) {
-						$theme_data[$option_key] = get_permalink($value);
-					} else {
-						$theme_data[$option_key] = $value;
-					}
+				} else {
+					$theme_data[$key] = $value;
 				}
 			}
 		}
