@@ -12,11 +12,18 @@ Hawp Core is Hawp Media's boilerplate starter theme for all custom websites
 
 == Changelog ==
 
-= 1.0.0 =
-* First Release: Jul 28, 2025
+= 1.0.1 - Aug 4, 2025 =
+* **Enhancement**: Improved theme options system with dynamic localization
+* **Fix**: Resolved PHP fatal error when ACF plugin is not installed
+* **Fix**: Corrected image field handling to return proper image URLs instead of post permalinks
+* **Enhancement**: Added automatic detection and localization of all theme options
+* **Enhancement**: Improved Freemius account page integration with consistent H1 headings
+* **Enhancement**: Added support for automatic ACF field localization when using theme prefix
+* **Performance**: Optimized theme options loading with direct database queries
+* **Maintenance**: Removed dependency on ACF plugin for core theme functionality
 
-= 0.0.1 =
-* Initial Release: May 8, 2025
+= 1.0.0 - Jul 28, 2025 =
+* Initial Release: 
 
 == Copyright ==
 
