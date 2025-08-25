@@ -12,6 +12,12 @@ Hawp Core is Hawp Media's boilerplate starter theme for all custom websites
 
 == Changelog ==
 
+= 1.0.2 - Aug 25, 2025 =
+* **Fix**: Normalized boolean option checks after ACF → Core migration (truthy/falsey instead of brittle true/false or 1/0).
+* **Fix**: Ensured checkbox fields save reliably when unchecked (0/1).
+* **Maintenance**: Removed legacy querystring-based blog prefix helpers.
+* **Maintenance**: Explicitly typed checkbox fields for consistent sanitization.
+
 = 1.0.1 - Aug 4, 2025 =
 * **Enhancement**: Improved theme options system with dynamic localization
 * **Fix**: Resolved PHP fatal error when ACF plugin is not installed
