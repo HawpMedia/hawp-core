@@ -35,17 +35,17 @@ class Hawp_Theme_Admin {
 	 */
 	private function setup_admin_options() {
 		// Media handling
-		if (get_theme_option('allow_svg_upload') === true && current_user_can('upload_files')) {
+		if (get_theme_option('allow_svg_upload') && current_user_can('upload_files')) {
 			add_filter('upload_mimes', [$this, 'allow_svg_upload']);
 		}
 
 		// WordPress admin customization
-		if (get_theme_option('wordpress_admin_item') === false) {
+		if (!get_theme_option('wordpress_admin_item')) {
 			$this->setup_wordpress_admin_customization();
 		}
 
 		// Comments handling
-		if (get_theme_option('comments_admin_menu_item') === false) {
+		if (!get_theme_option('comments_admin_menu_item')) {
 			$this->setup_comments_removal();
 		}
 

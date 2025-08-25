@@ -289,7 +289,8 @@ class Hawp_Theme_Options {
         ]);
         $this->register_field('integration', 'disable_rankmath_modules', __('Disable RankMath Modules'), [$this, 'render_checkbox_field'], [
             'description' => 'Disables unnecessary RankMath modules to improve performance.',
-            'default' => 1
+            'default' => 1,
+            'type' => 'checkbox'
         ]);
     }
 
@@ -299,40 +300,50 @@ class Hawp_Theme_Options {
     private function register_scripts_styles_settings() {
         $this->register_field('scripts_styles', 'dequeue_gutenberg_style', __('Gutenberg Stylesheet'), [$this, 'render_checkbox_field'], [
             'description' => 'The default block builder stylesheet.',
-            'default' => 1
+            'default' => 1,
+            'type' => 'checkbox'
         ]);
         $this->register_field('scripts_styles', 'enqueue_jquery_migrate', __('jQuery Migrate'), [$this, 'render_checkbox_field'], [
             'description' => 'Preserves compatibility of jQuery for versions of jQuery older than 1.9.',
-            'default' => 0
+            'default' => 0,
+            'type' => 'checkbox'
         ]);
         $this->register_field('scripts_styles', 'enqueue_lity_styles_scripts', __('Lity Lightbox'), [$this, 'render_checkbox_field'], [
             'description' => 'A jQuery library for developers to create lightweight, accessible and responsive lightboxes.',
-            'default' => 0
+            'default' => 0,
+            'type' => 'checkbox'
         ]);
         $this->register_field('scripts_styles', 'enqueue_swiper_styles_scripts', __('Swiper'), [$this, 'render_checkbox_field'], [
-            'default' => 0
+            'default' => 0,
+            'type' => 'checkbox'
         ]);
         $this->register_field('scripts_styles', 'enqueue_owl_styles_scripts', __('Owl Carousel'), [$this, 'render_checkbox_field'], [
             'description' => 'A jQuery library for developers to create responsive and touch enabled carousel sliders.',
-            'default' => 0
+            'default' => 0,
+            'type' => 'checkbox'
         ]);
         $this->register_field('scripts_styles', 'enqueue_litepicker_styles_scripts', __('Litepicker'), [$this, 'render_checkbox_field'], [
             'description' => 'A JavaScript library with no dependencies for developers to create lightweight date range pickers.',
-            'default' => 0
+            'default' => 0,
+            'type' => 'checkbox'
         ]);
         $this->register_field('scripts_styles', 'enqueue_mixitup_styles_scripts', __('Mixitup'), [$this, 'render_checkbox_field'], [
             'description' => 'A JavaScript library with no dependencies for developers to create animated filtering and sorting elements.',
-            'default' => 0
+            'default' => 0,
+            'type' => 'checkbox'
         ]);
         $this->register_field('scripts_styles', 'enqueue_select2_styles_scripts', __('Select2'), [$this, 'render_checkbox_field'], [
             'description' => 'The jQuery replacement for select boxes.',
-            'default' => 1
+            'default' => 1,
+            'type' => 'checkbox'
         ]);
         $this->register_field('scripts_styles', 'enqueue_fontawesome_5_style', __('FontAwesome 5'), [$this, 'render_checkbox_field'], [
-            'default' => 0
+            'default' => 0,
+            'type' => 'checkbox'
         ]);
         $this->register_field('scripts_styles', 'enqueue_fontawesome_6_style', __('FontAwesome 6'), [$this, 'render_checkbox_field'], [
-            'default' => 1
+            'default' => 1,
+            'type' => 'checkbox'
         ]);
     }
 
@@ -342,15 +353,18 @@ class Hawp_Theme_Options {
     private function register_utilities_settings() {
         $this->register_field('utilities', 'force_ssl', __('Force SSL URL\'s'), [$this, 'render_checkbox_field'], [
             'description' => 'Force SSL redirect on internal URL\'s if the Site Address URL includes HTTPS.',
-            'default' => 0
+            'default' => 0,
+            'type' => 'checkbox'
         ]);
         $this->register_field('utilities', 'prefix_post_urls', __('Prefix Post URL\'s'), [$this, 'render_checkbox_field'], [
             'description' => 'Rewrite post urls to include /blog/ before the post slug.',
-            'default' => 1
+            'default' => 1,
+            'type' => 'checkbox'
         ]);
         $this->register_field('utilities', 'allow_svg_upload', __('Allow SVG Uploads'), [$this, 'render_checkbox_field'], [
             'description' => 'Allow SVG files to be uploaded in the media library. Make sure you add the code below to the top of your svg file: <pre><code>&#x3C;?xml version="1.0" encoding="utf-8"?&#x3E;</code></pre>',
-            'default' => 1
+            'default' => 1,
+            'type' => 'checkbox'
         ]);
     }
 
@@ -363,11 +377,13 @@ class Hawp_Theme_Options {
         ]);
         $this->register_field('admin_ui', 'comments_admin_menu_item', __('Comments Menu Item'), [$this, 'render_checkbox_field'], [
             'description' => 'Show or hide the Comments menu item.',
-            'default' => 0
+            'default' => 0,
+            'type' => 'checkbox'
         ]);
         $this->register_field('admin_ui', 'wordpress_admin_item', __('WordPress Admin Items'), [$this, 'render_checkbox_field'], [
             'description' => 'Show or hide the wordpress.org related widgets & menus.',
-            'default' => 0
+            'default' => 0,
+            'type' => 'checkbox'
         ]);
     }
 

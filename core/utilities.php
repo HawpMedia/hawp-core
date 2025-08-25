@@ -147,70 +147,11 @@ if (!function_exists('auto_register_theme_blocks')) {
 }
 
 /**
- * Register and enqueue scripts and styles with array
- *
- * @deprecated 6.5.11 Use WordPress core functions wp_register_style(), wp_enqueue_style(), wp_register_script(), and wp_enqueue_script() instead.
- * @param array $array The scripts and styles array
- */
-if (!function_exists('add_styles_and_scripts')) {
-	function add_styles_and_scripts($array=[]) {
-		// Trigger deprecation notice
-		_deprecated_function(
-			__FUNCTION__,
-			'6.5.11',
-			'WordPress core functions wp_register_style(), wp_enqueue_style(), wp_register_script(), and wp_enqueue_script()'
-		);
-
-		foreach($array as $data) {
-			// Set enable to true by default
-			$enable = isset($data['enable']) ? $data['enable'] : true;
-
-			// Loop through styles
-			if (isset($data['styles'])) {
-				foreach ($data['styles'] as $style) {
-					$args = [
-						'handle' => $style[0],
-						'src' => $style[1],
-						'deps' => isset($style[2]) ? $style[2] : [],
-						'ver' => isset($style[3]) ? $style[3] : false,
-						'media' => isset($style[4]) ? $style[4] : 'all',
-					];
-					wp_register_style($args['handle'], $args['src'], $args['deps'], $args['ver'], $args['media']);
-
-					// If enable is true, enqueue the style
-					if ($enable === true) {
-						wp_enqueue_style($args['handle']);
-					}
-				}
-			}
-			// Loop through scripts
-			if (isset($data['scripts'])) {
-				foreach ($data['scripts'] as $script) {
-					$args = [
-						'handle' => $script[0],
-						'src' => $script[1],
-						'deps' => isset($script[2]) ? $script[2] : [],
-						'ver' => isset($script[3]) ? $script[3] : false,
-						'in_footer' => isset($script[4]) ? $script[4] : true,
-					];
-					wp_register_script($args['handle'], $args['src'], $args['deps'], $args['ver'], $args['in_footer']);
-
-					// If enable is true, enqueue the script
-					if ($enable === true) {
-						wp_enqueue_script($args['handle']);
-					}
-				}
-			}
-		}
-	}
-}
-
-/**
  * Force SSL for sites that are set to SSL.
  */
 if (!function_exists('force_ssl')) {
 	function force_ssl() {
-		if (!is_ssl() && stripos(home_url('/'), 'https://') === 0) {
+		if (get_theme_option('force_ssl') && !is_ssl() && stripos(home_url('/'), 'https://') === 0) {
 			wp_redirect('https://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'], 301);
 			exit();
 		}
@@ -218,55 +159,49 @@ if (!function_exists('force_ssl')) {
 }
 
 /**
- * Add new post rewrite rule
- */
-if (!function_exists('create_new_post_url_querystring')) {
-	function create_new_post_url_querystring() {
-		add_rewrite_rule(
-			'blog/([^/]*)$',
-			'index.php?name=$matches[1]',
-			'top'
-		);
-
-		add_rewrite_tag('%blog%','([^/]*)');
-	}
-}
-
-/**
  * Modify post link
  * This will print /blog/post-name instead of /post-name
  */
-if (!function_exists('append_post_query_string')) {
-	function append_post_query_string($url, $post, $leavename) {
-		if ($post->post_type !== 'post') {
-			return $url;
+if (!function_exists('hawp_prefix_post_urls')) {
+	function hawp_prefix_post_urls($permalink, $post, $leavename) {
+		if (get_theme_option('prefix_post_urls') && $post->post_type === 'post') {
+			$home = home_url('/');
+			$prefixed = home_url('/blog/') . ltrim(str_replace($home, '', $permalink), '/');
+			return $prefixed;
 		}
-
-		if (strpos($url, '%postname%') !== false) {
-			$slug = '%postname%';
-		} elseif ($post->post_name) {
-			$slug = $post->post_name;
-		} else {
-			$slug = sanitize_title($post->post_title);
-		}
-
-		return home_url(user_trailingslashit('blog/'. $slug));
+		return $permalink;
 	}
+	add_filter('post_link', 'hawp_prefix_post_urls', 10, 3);
 }
 
 /**
- * Redirect all posts to new url
- * If you get error 'Too many redirects' or 'Redirect loop', then delete everything below
+ * Add new post rewrite rule
  */
-if (!function_exists('redirect_old_post_urls')) {
-	function redirect_old_post_urls() {
-		if (is_singular('post')) {
-			global $post;
+if (!function_exists('hawp_prefix_post_rewrite')) {
+	function hawp_prefix_post_rewrite($rules) {
+		if (get_theme_option('prefix_post_urls')) {
+			$new = array();
+			$new['blog/(.+)/?$'] = 'index.php?name=$matches[1]';
+			return $new + $rules;
+		}
+		return $rules;
+	}
+	add_filter('rewrite_rules_array', 'hawp_prefix_post_rewrite');
+}
 
-			if (strpos($_SERVER['REQUEST_URI'], '/blog/') === false) {
-				wp_redirect(home_url(user_trailingslashit("blog/$post->post_name")), 301);
-				exit();
+/**
+ * Redirect old post urls
+ */
+if (!function_exists('hawp_redirect_old_post_urls')) {
+	function hawp_redirect_old_post_urls() {
+		if (get_theme_option('prefix_post_urls') && is_single() && !is_preview()) {
+			$target = get_permalink();
+			$request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+			if (strpos($request_uri, '/blog/') === false) {
+				wp_redirect($target, 301);
+				exit;
 			}
 		}
 	}
+	add_action('template_redirect', 'hawp_redirect_old_post_urls');
 }

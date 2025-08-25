@@ -8,12 +8,8 @@ if (!defined('ABSPATH')) exit();
 if (!class_exists('Hawp_RankMath')):
 
 class Hawp_RankMath {
-    private $option_prefix;
-    private $option_name;
 
     public function __construct() {
-        $this->option_prefix = hawp_theme()::$theme['option_prefix'];
-        $this->option_name = $this->option_prefix . 'disable_rankmath_modules';
 
         // Only add the filter if RankMath is active
         if ($this->is_rankmath_active()) {
@@ -33,7 +29,7 @@ class Hawp_RankMath {
      */
     public function disable_modules($modules) {
         // Only proceed if the option is enabled
-        if (!get_option($this->option_name, 1)) {
+        if (!get_theme_option('disable_rankmath_modules')) {
             return $modules;
         }
 
