@@ -194,12 +194,15 @@ if (!function_exists('hawp_prefix_post_rewrite')) {
  */
 if (!function_exists('hawp_redirect_old_post_urls')) {
 	function hawp_redirect_old_post_urls() {
-		if (get_theme_option('prefix_post_urls') && is_single() && !is_preview()) {
+		if (get_theme_option('prefix_post_urls') && is_singular('post') && !is_preview()) {
 			$target = get_permalink();
 			$request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
 			if (strpos($request_uri, '/blog/') === false) {
-				wp_redirect($target, 301);
-				exit;
+				$current_url = (is_ssl() ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $request_uri;
+				if (trailingslashit($target) !== trailingslashit($current_url)) {
+					wp_redirect($target, 301);
+					exit;
+				}
 			}
 		}
 	}
