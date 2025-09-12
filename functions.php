@@ -3,7 +3,6 @@
 // Get the theme rolling!
 // ------------------------------------------
 
-// Create a helper function for easy SDK access.
 // if ( ! function_exists( 'hawp_core_freemius' ) ) {
 //     // Create a helper function for easy SDK access.
 //     function hawp_core_freemius() {
