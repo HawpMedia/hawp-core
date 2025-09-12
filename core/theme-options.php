@@ -664,7 +664,7 @@ class Hawp_Theme_Options {
             return;
         }
 
-        // Exclude Freemius pages (they start with hm-theme-options- but are not theme options pages)
+        // Exclude non-theme-option pages that share the hm-theme-options prefix
         $current_page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
         
         // Check if this is a valid theme options tab

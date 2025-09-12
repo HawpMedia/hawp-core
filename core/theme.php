@@ -45,7 +45,8 @@ class Hawp_Theme {
 			'admin',        // Admin functionality
 			'shortcodes',   // Shortcode functionality
 			'rankmath',     // RankMath integration
-			'theme-options' // Theme options
+			'theme-options',// Theme options
+			'updater'       // GitHub updater
 		];
 
 		foreach ($includes as $include) {
