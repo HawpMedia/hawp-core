@@ -125,6 +125,9 @@ class Hawp_Theme_Options {
             if ($field_type === 'svg_array') {
                 return [$this, 'sanitize_svg_array'];
             }
+            if ($field_type === 'code') {
+                return [$this, 'sanitize_code_field'];
+            }
             return $this->sanitization_rules[$field_type];
         }
 
@@ -554,6 +557,16 @@ class Hawp_Theme_Options {
         $code = preg_replace('/<!--(.*?)-->/s', '', $code);
         
         return $code;
+    }
+
+    /**
+     * Sanitize code fields, allowing scripts for trusted admins
+     */
+    public function sanitize_code_field($value) {
+        if (current_user_can('unfiltered_html')) {
+            return $value;
+        }
+        return wp_kses_post($value);
     }
 
     /**
