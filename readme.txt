@@ -12,6 +12,19 @@ Hawp Core is Hawp Media's boilerplate starter theme for all custom websites
 
 == Changelog ==
 
+= 1.0.6 - Sep 12, 2025 =
+* **Feature**: Added GitHub-based theme updater (GitHub Releases; supports release asset or tag zip).
+* **Maintenance**: Removed bundled Freemius SDK and all related references.
+
+= 1.0.5 - Sep 2025 =
+* **Maintenance**: Internal adjustments and housekeeping; no user-facing changes.
+
+= 1.0.4 - Sep 2025 =
+* **Fix**: Minor compatibility fixes and stability improvements.
+
+= 1.0.3 - Aug 2025 =
+* **Maintenance**: Preparatory changes for upcoming updater integration.
+
 = 1.0.2 - Aug 25, 2025 =
 * **Fix**: Normalized boolean option checks after ACF → Core migration (truthy/falsey instead of brittle true/false or 1/0).
 * **Fix**: Ensured checkbox fields save reliably when unchecked (0/1).
@@ -23,7 +36,6 @@ Hawp Core is Hawp Media's boilerplate starter theme for all custom websites
 * **Fix**: Resolved PHP fatal error when ACF plugin is not installed
 * **Fix**: Corrected image field handling to return proper image URLs instead of post permalinks
 * **Enhancement**: Added automatic detection and localization of all theme options
-* **Enhancement**: Improved Freemius account page integration with consistent H1 headings
 * **Enhancement**: Added support for automatic ACF field localization when using theme prefix
 * **Performance**: Optimized theme options loading with direct database queries
 * **Maintenance**: Removed dependency on ACF plugin for core theme functionality
