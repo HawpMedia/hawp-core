@@ -1,8 +1,8 @@
 === Hawp Core ===
 Requires at least: 6.4
-Tested up to: 6.6.1
+Tested up to: 6.8.2
 Requires PHP: 7.4
-Stable tag: 6.8.2
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,6 +11,10 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Hawp Core is Hawp Media's boilerplate starter theme for all custom websites
 
 == Changelog ==
+
+= 1.0.7 - Sep 16, 2025 =
+* **Fix**: Scoped GitHub updater to theme upgrades only (Theme_Upgrader + active theme), preventing plugin update failures.
+* **Maintenance**: Added guard clauses in `pre_download()` to avoid intercepting non-theme updates.
 
 = 1.0.6 - Sep 12, 2025 =
 * **Feature**: Added GitHub-based theme updater (GitHub Releases; supports release asset or tag zip).
