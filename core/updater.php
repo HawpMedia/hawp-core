@@ -133,10 +133,17 @@ class Hawp_Github_Theme_Updater {
 	 * zip path for WordPress to install.
 	 */
 	public static function pre_download($reply, $package, $upgrader, $hook_extra) {
-		// Only for theme updates; allow if hook_extra indicates theme, or package matches our repo.
+		// Guard: only run for theme upgrades handled by Theme_Upgrader
+		if (!is_object($upgrader) || (class_exists('Theme_Upgrader') && !($upgrader instanceof Theme_Upgrader))) {
+			return $reply;
+		}
+
+		// Guard: bail if this is explicitly not a theme upgrade
 		if (!empty($hook_extra['type']) && $hook_extra['type'] !== 'theme') {
 			return $reply;
 		}
+
+		// Guard: limit strictly to this theme when specified
 		$theme_slug = get_template();
 		if (!empty($hook_extra['theme']) && $hook_extra['theme'] !== $theme_slug) {
 			return $reply;
