@@ -12,6 +12,9 @@ Hawp Core is Hawp Media's boilerplate starter theme for all custom websites
 
 == Changelog ==
 
+= 1.0.8 - Sep 29, 2025 =
+* **Fix**: Harden theme updater to prevent plugin/install conflicts
+
 = 1.0.7 - Sep 16, 2025 =
 * **Fix**: Scoped GitHub updater to theme upgrades only (Theme_Upgrader + active theme), preventing plugin update failures.
 * **Maintenance**: Added guard clauses in `pre_download()` to avoid intercepting non-theme updates.
