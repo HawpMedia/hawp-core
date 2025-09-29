@@ -143,9 +143,22 @@ class Hawp_Github_Theme_Updater {
 			return $reply;
 		}
 
+		// Guard: only for update action (do not intercept installs or uploads)
+		if (empty($hook_extra['action']) || $hook_extra['action'] !== 'update') {
+			return $reply;
+		}
+
 		// Guard: limit strictly to this theme when specified
 		$theme_slug = get_template();
 		if (!empty($hook_extra['theme']) && $hook_extra['theme'] !== $theme_slug) {
+			return $reply;
+		}
+		if (!empty($hook_extra['themes']) && is_array($hook_extra['themes']) && !in_array($theme_slug, $hook_extra['themes'], true)) {
+			return $reply;
+		}
+
+		// Guard: only intercept remote HTTP(S) packages (skip local uploads)
+		if (!is_string($package) || !preg_match('#^https?://#i', $package)) {
 			return $reply;
 		}
 
