@@ -2,7 +2,7 @@
 /**
  * Displays the header mobile menu tray.
  *
- * If this is being used, remove the header-menu-buttons
+ * If this is being used, remove the nav-controls-default
  * template part call from the header.php file and replace
  * it with the name of this file. And dont forget to comment
  * out the sass for nav-mobile-burger in the style.scss files

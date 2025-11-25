@@ -3,18 +3,18 @@
  * The header for our theme.
  */
 
-get_template_part('parts/layout/head');
+get_template_part('parts/structure/head');
 ?>
 
 <header id="header" class="header contain" role="banner">
 
 	<?php echo do_shortcode('[logo class="logo"]'); ?>
 
-	<?php get_template_part('parts/layout/header-menu-buttons'); ?>
+	<?php get_template_part('parts/structure/nav-controls-default'); ?>
 
 </header>
 
-<?php get_template_part('parts/layout/header-menu'); ?>
+<?php get_template_part('parts/structure/nav-primary'); ?>
 
 <main id="main" role="main">
 
