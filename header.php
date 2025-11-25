@@ -10,7 +10,7 @@ get_template_part('parts/structure/head');
 
 	<?php echo do_shortcode('[logo class="logo"]'); ?>
 
-	<?php get_template_part('parts/structure/nav-controls-default'); ?>
+	<?php get_template_part('parts/components/nav-controls-default'); ?>
 
 </header>
 
