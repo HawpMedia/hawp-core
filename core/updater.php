@@ -49,15 +49,36 @@ class Hawp_Github_Theme_Updater {
 			return $args;
 		}
 		$config = self::get_config();
+		$repo = isset($config['repo']) ? trim($config['repo']) : '';
+		// Only modify requests that target this theme's repository.
+		if ($repo) {
+			$repo_patterns = [
+				'api.github.com/repos/' . $repo,
+				'github.com/' . $repo,
+				'codeload.github.com/' . $repo,
+			];
+			$matches_repo = false;
+			foreach ($repo_patterns as $pattern) {
+				if (strpos($url, $pattern) !== false) {
+					$matches_repo = true;
+					break;
+				}
+			}
+			if (!$matches_repo) {
+				return $args;
+			}
+		}
 		$headers = isset($args['headers']) && is_array($args['headers']) ? $args['headers'] : [];
 		$headers['User-Agent'] = isset($headers['User-Agent']) ? $headers['User-Agent'] : 'WordPress-HawpCore-Updater';
 		// Accept headers: JSON for API, binary for archives/assets.
-		if (strpos($url, 'api.github.com') !== false) {
-			$headers['Accept'] = 'application/vnd.github+json';
-		} else {
-			$headers['Accept'] = 'application/octet-stream';
+		if (empty($headers['Accept'])) {
+			if (strpos($url, 'api.github.com') !== false) {
+				$headers['Accept'] = 'application/vnd.github+json';
+			} else {
+				$headers['Accept'] = 'application/octet-stream';
+			}
 		}
-		if (!empty($config['token'])) {
+		if (!empty($config['token']) && empty($headers['Authorization'])) {
 			$headers['Authorization'] = 'Bearer ' . $config['token'];
 		}
 		$args['headers'] = $headers;
