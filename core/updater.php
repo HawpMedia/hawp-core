@@ -223,18 +223,13 @@ class Hawp_Github_Theme_Updater {
 		if (empty($hook_extra['type']) || $hook_extra['type'] !== 'theme') {
 			return $source;
 		}
-		if (empty($hook_extra['action']) || $hook_extra['action'] !== 'update') {
+		if (!empty($hook_extra['action']) && !in_array($hook_extra['action'], ['update', 'upgrade'], true)) {
 			return $source;
 		}
 		$theme_slug = get_template();
-		if (empty($hook_extra['theme']) && empty($hook_extra['themes'])) {
-			return $source;
-		}
-		if (!empty($hook_extra['theme']) && $hook_extra['theme'] !== $theme_slug) {
-			return $source;
-		}
-		if (!empty($hook_extra['themes']) && is_array($hook_extra['themes']) && !in_array($theme_slug, $hook_extra['themes'], true)) {
-			return $source;
+		$matches_hook = (!empty($hook_extra['theme']) && $hook_extra['theme'] === $theme_slug);
+		if (!$matches_hook && !empty($hook_extra['themes']) && is_array($hook_extra['themes'])) {
+			$matches_hook = in_array($theme_slug, $hook_extra['themes'], true);
 		}
 
 		if (empty($remote_source) || !is_dir($remote_source)) {
@@ -245,6 +240,9 @@ class Hawp_Github_Theme_Updater {
 		$source_norm = wp_normalize_path($source);
 		$remote_norm = trailingslashit(wp_normalize_path($remote_source));
 		if (strpos($source_norm . '/', $remote_norm) !== 0) {
+			return $source;
+		}
+		if (!$matches_hook && !self::source_matches_theme($source, $theme_slug)) {
 			return $source;
 		}
 		if (basename($source) === $theme_slug) {
@@ -258,10 +256,40 @@ class Hawp_Github_Theme_Updater {
 		if (file_exists($desired)) {
 			self::rrmdir($desired);
 		}
+		if (!function_exists('move_dir')) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		if (function_exists('move_dir')) {
+			$moved = move_dir($source, $desired);
+			if ($moved === true) {
+				return $desired;
+			}
+		}
 		if (@rename($source, $desired)) {
 			return $desired;
 		}
 		return $source;
+	}
+
+	/**
+	 * Check if a source directory is the Hawp Core theme based on style.css headers.
+	 */
+	protected static function source_matches_theme($source, $theme_slug) {
+		$style_path = $source . '/style.css';
+		if (!file_exists($style_path)) {
+			return false;
+		}
+		$contents = @file_get_contents($style_path, false, null, 0, 8192);
+		if ($contents === false) {
+			return false;
+		}
+		if (stripos($contents, 'Text Domain: hawp-core') !== false) {
+			return true;
+		}
+		if (stripos($contents, 'Theme Name: Hawp Core') !== false) {
+			return true;
+		}
+		return (stripos($contents, 'Theme Name: ' . $theme_slug) !== false);
 	}
 
 	protected static function rrmdir($dir) {
