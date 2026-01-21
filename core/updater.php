@@ -22,6 +22,7 @@ class Hawp_Github_Theme_Updater {
 		add_filter('themes_api', [__CLASS__, 'themes_api'], 10, 3);
 		add_filter('http_request_args', [__CLASS__, 'add_github_headers'], 10, 2);
 		add_filter('upgrader_pre_download', [__CLASS__, 'pre_download'], 10, 4);
+		add_filter('upgrader_source_selection', [__CLASS__, 'fix_theme_source_dir'], 10, 4);
 	}
 
 	/**
@@ -213,6 +214,54 @@ class Hawp_Github_Theme_Updater {
 			return $normalized;
 		}
 		return $package_file;
+	}
+
+	/**
+	 * Ensure the extracted theme folder matches the theme slug (handles zips named like repo-tag).
+	 */
+	public static function fix_theme_source_dir($source, $remote_source, $upgrader, $hook_extra) {
+		if (empty($hook_extra['type']) || $hook_extra['type'] !== 'theme') {
+			return $source;
+		}
+		if (empty($hook_extra['action']) || $hook_extra['action'] !== 'update') {
+			return $source;
+		}
+		$theme_slug = get_template();
+		if (empty($hook_extra['theme']) && empty($hook_extra['themes'])) {
+			return $source;
+		}
+		if (!empty($hook_extra['theme']) && $hook_extra['theme'] !== $theme_slug) {
+			return $source;
+		}
+		if (!empty($hook_extra['themes']) && is_array($hook_extra['themes']) && !in_array($theme_slug, $hook_extra['themes'], true)) {
+			return $source;
+		}
+
+		if (empty($remote_source) || !is_dir($remote_source)) {
+			return $source;
+		}
+		$source = untrailingslashit($source);
+		$remote_source = untrailingslashit($remote_source);
+		$source_norm = wp_normalize_path($source);
+		$remote_norm = trailingslashit(wp_normalize_path($remote_source));
+		if (strpos($source_norm . '/', $remote_norm) !== 0) {
+			return $source;
+		}
+		if (basename($source) === $theme_slug) {
+			return $source;
+		}
+		if (!file_exists($source . '/style.css')) {
+			return $source;
+		}
+
+		$desired = trailingslashit($remote_source) . $theme_slug;
+		if (file_exists($desired)) {
+			self::rrmdir($desired);
+		}
+		if (@rename($source, $desired)) {
+			return $desired;
+		}
+		return $source;
 	}
 
 	protected static function rrmdir($dir) {
