@@ -2,7 +2,7 @@
 Requires at least: 6.4
 Tested up to: 6.8.2
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,6 +11,9 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Hawp Core is Hawp Media's boilerplate starter theme for all custom websites
 
 == Changelog ==
+
+= 1.1.1 - Jan 21, 2026 =
+* **Fix**: Scoped GitHub updater headers to theme repo to avoid updater conflicts.
 
 = 1.1.0 - Nov 25, 2025 =
 * **Refactor**: Renamed `parts/layout` to `parts/structure` and split reusable navigation controls into `parts/components`.
