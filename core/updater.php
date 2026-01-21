@@ -22,7 +22,7 @@ class Hawp_Github_Theme_Updater {
 		add_filter('themes_api', [__CLASS__, 'themes_api'], 10, 3);
 		add_filter('http_request_args', [__CLASS__, 'add_github_headers'], 10, 2);
 		add_filter('upgrader_pre_download', [__CLASS__, 'pre_download'], 10, 4);
-		add_filter('upgrader_source_selection', [__CLASS__, 'fix_theme_source_dir'], 10, 4);
+		add_filter('upgrader_source_selection', [__CLASS__, 'maybe_rename_source'], 9, 4);
 	}
 
 	/**
@@ -33,6 +33,7 @@ class Hawp_Github_Theme_Updater {
 			'repo'   => defined('HAWP_GITHUB_REPO') ? HAWP_GITHUB_REPO : 'hawpmedia/hawp-core', // e.g. owner/repo
 			'asset'  => defined('HAWP_GITHUB_ASSET') ? HAWP_GITHUB_ASSET : '', // optional release asset zip name (e.g. hawp-core.zip)
 			'token'  => defined('HAWP_GITHUB_TOKEN') ? HAWP_GITHUB_TOKEN : '',
+			'debug'  => defined('HAWP_GITHUB_DEBUG') ? (bool) HAWP_GITHUB_DEBUG : false,
 		];
 		/**
 		 * Filter to override updater config programmatically.
@@ -44,13 +45,16 @@ class Hawp_Github_Theme_Updater {
 
 	/**
 	 * Add Authorization and headers for GitHub requests.
+	 * Scoped to only apply to this theme's repository to avoid conflicts with other updaters.
 	 */
 	public static function add_github_headers($args, $url) {
 		if (strpos($url, 'github.com') === false && strpos($url, 'api.github.com') === false && strpos($url, 'codeload.github.com') === false) {
 			return $args;
 		}
+
 		$config = self::get_config();
 		$repo = isset($config['repo']) ? trim($config['repo']) : '';
+
 		// Only modify requests that target this theme's repository.
 		if ($repo) {
 			$repo_patterns = [
@@ -69,8 +73,14 @@ class Hawp_Github_Theme_Updater {
 				return $args;
 			}
 		}
+
 		$headers = isset($args['headers']) && is_array($args['headers']) ? $args['headers'] : [];
-		$headers['User-Agent'] = isset($headers['User-Agent']) ? $headers['User-Agent'] : 'WordPress-HawpCore-Updater';
+
+		// Only set headers if not already present (avoid overwriting other updaters)
+		if (!isset($headers['User-Agent'])) {
+			$headers['User-Agent'] = 'WordPress-HawpCore-Updater';
+		}
+
 		// Accept headers: JSON for API, binary for archives/assets.
 		if (empty($headers['Accept'])) {
 			if (strpos($url, 'api.github.com') !== false) {
@@ -79,9 +89,11 @@ class Hawp_Github_Theme_Updater {
 				$headers['Accept'] = 'application/octet-stream';
 			}
 		}
+
 		if (!empty($config['token']) && empty($headers['Authorization'])) {
 			$headers['Authorization'] = 'Bearer ' . $config['token'];
 		}
+
 		$args['headers'] = $headers;
 		$args['timeout'] = isset($args['timeout']) ? max(15, (int) $args['timeout']) : 20;
 		return $args;
@@ -165,8 +177,8 @@ class Hawp_Github_Theme_Updater {
 			return $reply;
 		}
 
-		// Guard: only for update action (do not intercept installs or uploads)
-		if (empty($hook_extra['action']) || $hook_extra['action'] !== 'update') {
+		// Guard: only for update action when explicitly provided (skip installs/uploads)
+		if (!empty($hook_extra['action']) && $hook_extra['action'] !== 'update') {
 			return $reply;
 		}
 
@@ -205,91 +217,103 @@ class Hawp_Github_Theme_Updater {
 		}
 		$package_file = download_url($download_url);
 		if (is_wp_error($package_file)) {
+			self::log('pre_download: download failed', ['error' => $package_file->get_error_message()]);
 			return $reply; // Fallback to default flow
 		}
 
 		$normalized = self::normalize_theme_zip($package_file, $theme_slug);
 		if ($normalized) {
-			@unlink($package_file);
+			// Only delete the original if we created a new normalized zip
+			if ($normalized !== $package_file) {
+				@unlink($package_file);
+			}
+			self::log('pre_download: normalized zip created', ['theme' => $theme_slug]);
 			return $normalized;
 		}
+		self::log('pre_download: using original zip', ['theme' => $theme_slug]);
 		return $package_file;
 	}
 
 	/**
-	 * Ensure the extracted theme folder matches the theme slug (handles zips named like repo-tag).
+	 * Ensure the extracted source directory matches the theme slug.
+	 * This handles GitHub archives like repo-1.2.3 even when ZipArchive isn't available.
 	 */
-	public static function fix_theme_source_dir($source, $remote_source, $upgrader, $hook_extra) {
-		if (empty($hook_extra['type']) || $hook_extra['type'] !== 'theme') {
+	public static function maybe_rename_source($source, $remote_source, $upgrader, $hook_extra) {
+		if (is_wp_error($source)) {
 			return $source;
 		}
-		if (!empty($hook_extra['action']) && !in_array($hook_extra['action'], ['update', 'upgrade'], true)) {
+		if (!is_object($upgrader) || (class_exists('Theme_Upgrader') && !($upgrader instanceof Theme_Upgrader))) {
 			return $source;
 		}
+
 		$theme_slug = get_template();
-		$matches_hook = (!empty($hook_extra['theme']) && $hook_extra['theme'] === $theme_slug);
-		if (!$matches_hook && !empty($hook_extra['themes']) && is_array($hook_extra['themes'])) {
-			$matches_hook = in_array($theme_slug, $hook_extra['themes'], true);
-		}
 
-		if (empty($remote_source) || !is_dir($remote_source)) {
+		// Guard: only affect this theme.
+		if (!empty($hook_extra['theme']) && $hook_extra['theme'] !== $theme_slug) {
 			return $source;
 		}
-		$source = untrailingslashit($source);
-		$remote_source = untrailingslashit($remote_source);
-		$source_norm = wp_normalize_path($source);
-		$remote_norm = trailingslashit(wp_normalize_path($remote_source));
-		if (strpos($source_norm . '/', $remote_norm) !== 0) {
+		if (!empty($hook_extra['themes']) && is_array($hook_extra['themes']) && !in_array($theme_slug, $hook_extra['themes'], true)) {
 			return $source;
 		}
-		if (!$matches_hook && !self::source_matches_theme($source, $theme_slug)) {
+		if (!empty($hook_extra['type']) && $hook_extra['type'] !== 'theme') {
 			return $source;
 		}
-		if (basename($source) === $theme_slug) {
+		if (!empty($hook_extra['action']) && $hook_extra['action'] !== 'update') {
 			return $source;
 		}
-		if (!file_exists($source . '/style.css')) {
+		if (!is_string($source) || $source === '') {
 			return $source;
 		}
 
-		$desired = trailingslashit($remote_source) . $theme_slug;
-		if (file_exists($desired)) {
-			self::rrmdir($desired);
+		$source_path = untrailingslashit($source);
+		$source_base = basename($source_path);
+		if ($source_base === $theme_slug) {
+			self::log('source_selection: already matches slug', ['theme' => $theme_slug]);
+			return $source;
 		}
-		if (!function_exists('move_dir')) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
+
+		$source_parent = dirname($source_path);
+		$renamed_path = trailingslashit($source_parent) . $theme_slug;
+
+		if ($renamed_path === $source_path) {
+			return $source;
 		}
-		if (function_exists('move_dir')) {
-			$moved = move_dir($source, $desired);
-			if ($moved === true) {
-				return $desired;
+
+		if (file_exists($renamed_path)) {
+			self::rrmdir($renamed_path);
+		}
+
+		$renamed = @rename($source_path, $renamed_path);
+		if (!$renamed) {
+			global $wp_filesystem;
+			if (is_object($wp_filesystem) && method_exists($wp_filesystem, 'move')) {
+				$renamed = $wp_filesystem->move($source_path, $renamed_path, true);
 			}
 		}
-		if (@rename($source, $desired)) {
-			return $desired;
+
+		if ($renamed) {
+			self::log('source_selection: renamed source dir', ['from' => $source_base, 'to' => $theme_slug]);
+			return trailingslashit($renamed_path);
 		}
+
+		self::log('source_selection: rename failed', ['from' => $source_base, 'to' => $theme_slug]);
 		return $source;
 	}
 
-	/**
-	 * Check if a source directory is the Hawp Core theme based on style.css headers.
-	 */
-	protected static function source_matches_theme($source, $theme_slug) {
-		$style_path = $source . '/style.css';
-		if (!file_exists($style_path)) {
-			return false;
+	protected static function log($message, $context = []) {
+		$config = self::get_config();
+		if (empty($config['debug'])) {
+			return;
 		}
-		$contents = @file_get_contents($style_path, false, null, 0, 8192);
-		if ($contents === false) {
-			return false;
+		$line = '[Hawp Updater] ' . $message;
+		if (!empty($context)) {
+			$safe_context = [];
+			foreach ($context as $key => $value) {
+				$safe_context[$key] = is_scalar($value) ? $value : wp_json_encode($value);
+			}
+			$line .= ' ' . wp_json_encode($safe_context);
 		}
-		if (stripos($contents, 'Text Domain: hawp-core') !== false) {
-			return true;
-		}
-		if (stripos($contents, 'Theme Name: Hawp Core') !== false) {
-			return true;
-		}
-		return (stripos($contents, 'Theme Name: ' . $theme_slug) !== false);
+		error_log($line);
 	}
 
 	protected static function rrmdir($dir) {
