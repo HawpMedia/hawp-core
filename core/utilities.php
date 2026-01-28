@@ -181,7 +181,8 @@ if (!function_exists('hawp_prefix_post_rewrite')) {
 	function hawp_prefix_post_rewrite($rules) {
 		if (get_theme_option('prefix_post_urls')) {
 			$new = array();
-			$new['blog/(.+)/?$'] = 'index.php?name=$matches[1]';
+			// Avoid intercepting pagination, feeds, and AMP routes.
+			$new['blog/(?!page/|feed/|amp/|comment-page-)([^/]+)/?$'] = 'index.php?name=$matches[1]';
 			return $new + $rules;
 		}
 		return $rules;
