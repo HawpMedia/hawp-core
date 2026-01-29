@@ -963,45 +963,47 @@ class Hawp_Theme_Options {
                                                 echo '<p>Not sure how you ended up here! If you\'re not a developer, there\'s nothing to see here. If you are, then continue reading. </p>';
                                                 echo '<p>To add custom settings, navigate to your child theme\'s functions.php file and add them to the group <code>group_custom_settings</code> using the <code>acf_add_local_field_group</code> function.</p>';
                                                 echo '<p>Here\'s an example of what this could look like:</p>';
-                                                echo '<pre><code>function add_acf_custom_settings() {
-                                                    acf_add_local_field_group([
-                                                        \'key\' => \'group_custom_settings\',
-                                                        \'title\' => \'Custom Settings\',
-                                                        \'fields\' => [
-                                                            [
-                                                                \'key\' => \'field_custom_text\',
-                                                                \'label\' => \'Custom Text Field\',
-                                                                \'name\' => \'custom_text\',
-                                                                \'type\' => \'text\',
-                                                                \'instructions\' => \'Enter some custom text\',
-                                                                \'required\' => 0,
-                                                            ],
-                                                            [
-                                                                \'key\' => \'field_custom_image\',
-                                                                \'label\' => \'Custom Image\',
-                                                                \'name\' => \'custom_image\',
-                                                                \'type\' => \'image\',
-                                                                \'return_format\' => \'id\',
-                                                                \'preview_size\' => \'thumbnail\',
-                                                                \'library\' => \'all\',
-                                                            ],
-                                                        ],
-                                                        \'location\' => [[[
-                                                            \'param\' => \'options_page\',
-                                                            \'operator\' => \'==\',
-                                                            \'value\' => \'hawptheme\',
-                                                        ]]],
-                                                        \'menu_order\' => 0,
-                                                        \'position\' => \'normal\',
-                                                        \'style\' => \'default\',
-                                                        \'label_placement\' => \'top\',
-                                                        \'instruction_placement\' => \'label\',
-                                                        \'hide_on_screen\' => \'\',
-                                                        \'active\' => true,
-                                                    ]);
-                                                }
-                                                add_action(\'acf/init\', \'add_acf_custom_settings\', 5);</code></pre>';
-                                                echo '</div>';
+
+echo '<pre><code>function add_acf_custom_settings() {
+    acf_add_local_field_group([
+        \'key\' => \'group_custom_settings\',
+        \'title\' => \'Custom Settings\',
+        \'fields\' => [
+            [
+                \'key\' => \'field_custom_text\',
+                \'label\' => \'Custom Text Field\',
+                \'name\' => \'custom_text\',
+                \'type\' => \'text\',
+                \'instructions\' => \'Enter some custom text\',
+                \'required\' => 0,
+            ],
+            [
+                \'key\' => \'field_custom_image\',
+                \'label\' => \'Custom Image\',
+                \'name\' => \'custom_image\',
+                \'type\' => \'image\',
+                \'return_format\' => \'id\',
+                \'preview_size\' => \'thumbnail\',
+                \'library\' => \'all\',
+            ],
+        ],
+        \'location\' => [[[
+            \'param\' => \'options_page\',
+            \'operator\' => \'==\',
+            \'value\' => \'hawptheme\',
+        ]]],
+        \'menu_order\' => 0,
+        \'position\' => \'normal\',
+        \'style\' => \'default\',
+        \'label_placement\' => \'top\',
+        \'instruction_placement\' => \'label\',
+        \'hide_on_screen\' => \'\',
+        \'active\' => true,
+    ]);
+}
+add_action(\'acf/init\', \'add_acf_custom_settings\', 5);</code></pre>';
+echo '</div>';
+
                                             } else {
                                                 $custom_return = admin_url('admin.php?page=' . $this->page_slug . '&tab=custom_settings#custom_settings');
                                                 acf_form([
