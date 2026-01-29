@@ -20,12 +20,6 @@ class Hawp_Theme_Admin {
 		add_action('admin_bar_menu', [$this, 'add_admin_bar_notice'], 0);
 		add_filter('admin_footer_text', [$this, 'change_admin_footer']);
 
-		// ACF specific functionality
-		add_action('acf/input/admin_footer', [$this, 'add_acf_color_palette']);
-		add_action('acf/input/admin_footer', [$this, 'add_theme_colors_to_acf_color_picker']);
-		add_filter('acf/settings/save_json', [$this, 'acf_json_save_point']);
-		add_filter('acf/settings/load_json', [$this, 'acf_json_load_point']);
-
 		// Setup conditional admin features
 		$this->setup_admin_options();
 	}
@@ -102,8 +96,8 @@ class Hawp_Theme_Admin {
 			wp_enqueue_style('hm_admin_google_fonts', $google_fonts);
 		}
 
-		// Theme options styles
-		if (strpos($_SERVER['REQUEST_URI'], 'theme-options') !== false) {
+		// Theme options styles (hash-based single page)
+		if (strpos($_SERVER['REQUEST_URI'], 'page=hawptheme') !== false) {
 			wp_register_style(
 				'hm_admin_options_style',
 				HM_URL.'/assets/css/admin-options.css',
@@ -181,93 +175,6 @@ class Hawp_Theme_Admin {
 			esc_html(Hawp_Theme::$whitelabel['brand_name']),
 			Hawp_Theme::$whitelabel['admin_footer_logo']
 		);
-	}
-
-	/**
-	 * Get the editor color palette.
-	 */
-	public function get_editor_color_palette() {
-		$color_palette = current((array) get_theme_support('editor-color-palette'));
-
-		if (!$color_palette) {
-			return '';
-		}
-
-		$colors = array_map(function($color) {
-			return "'" . $color['color'] . "'";
-		}, $color_palette);
-
-		return '[' . implode(', ', $colors) . ']';
-	}
-
-	/**
-	 * Add the editor color palette to acf color field.
-	 */
-	public function add_acf_color_palette() {
-		$color_palette = $this->get_editor_color_palette();
-		if (!$color_palette) {
-			return;
-		}
-
-		printf(
-			'<script type="text/javascript">
-				(function($) {
-					acf.add_filter("color_picker_args", function(args, $field) {
-						args.palettes = %s;
-						return args;
-					});
-				})(jQuery);
-			</script>',
-			$color_palette
-		);
-	}
-
-	/**
-	 * Add theme.json colors to acf color picker.
-	 */
-	public function add_theme_colors_to_acf_color_picker() {
-		echo '<script type="text/javascript">
-			(function($) {
-				if (typeof wp !== "undefined" && typeof wp.data !== "undefined") {
-					acf.add_filter("color_picker_args", function($args, $field) {
-						const $settings = wp.data.select("core/editor").getEditorSettings();
-						$args.palettes = $settings.colors.map(x => x.color);
-						return $args;
-					});
-				}
-			})(jQuery);
-		</script>';
-	}
-
-	/**
-	 * Save ACF field groups to JSON based on site URL.
-	 */
-	public function acf_json_save_point($path) {
-		$subsite_slug = get_subsite_slug_from_url(get_site_url());
-		$path = get_stylesheet_directory() . '/acf-json/' . $subsite_slug;
-
-		if (!is_dir($path)) {
-			wp_mkdir_p($path);
-		}
-
-		return $path;
-	}
-
-	/**
-	 * Load ACF field groups from JSON based on site URL.
-	 */
-	public function acf_json_load_point($paths) {
-		$subsite_slug = get_subsite_slug_from_url(get_site_url());
-		$load_path = get_stylesheet_directory() . '/acf-json/' . $subsite_slug;
-
-		if (!is_dir($load_path)) {
-			wp_mkdir_p($load_path);
-		}
-
-		unset($paths[0]);
-		$paths[] = $load_path;
-
-		return $paths;
 	}
 
 	/**

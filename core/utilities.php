@@ -135,6 +135,7 @@ if (!function_exists('auto_register_theme_blocks')) {
 			return;
 		}
 
+		$blocks_dir = trailingslashit($blocks_dir);
 		if (is_dir($blocks_dir) && function_exists('register_block_type')) {
 			$block_directories = glob($blocks_dir . '*', GLOB_ONLYDIR);
 

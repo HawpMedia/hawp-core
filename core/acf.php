@@ -14,7 +14,6 @@ class Hawp_Theme_ACF {
 	 */
 	public function setup() {
 		add_action('acf/input/admin_footer', [$this, 'add_acf_color_palette']);
-		add_action('acf/input/admin_footer', [$this, 'add_theme_colors_to_acf_color_picker']);
 		add_filter('acf/settings/save_json', [$this, 'acf_json_save_point']);
 		add_filter('acf/settings/load_json', [$this, 'acf_json_load_point']);
 	}
@@ -37,42 +36,48 @@ class Hawp_Theme_ACF {
 	}
 
 	/**
-	 * Add the editor color palette to acf color field.
+	 * Add theme.json or editor color palette to ACF color picker.
 	 */
 	public function add_acf_color_palette() {
 		$color_palette = $this->get_editor_color_palette();
-		if (!$color_palette) {
-			return;
-		}
+		$color_palette = $color_palette ? $color_palette : '[]';
 
 		printf(
 			'<script type="text/javascript">
 				(function($) {
+					const fallbackPalette = %s;
+					function getEditorSettings() {
+						if (typeof wp === "undefined" || !wp.data || !wp.data.select) {
+							return null;
+						}
+						const stores = ["core/editor", "core/edit-widgets", "core/block-editor"];
+						for (let i = 0; i < stores.length; i++) {
+							const selector = wp.data.select(stores[i]);
+							if (!selector) {
+								continue;
+							}
+							if (typeof selector.getEditorSettings === "function") {
+								return selector.getEditorSettings();
+							}
+							if (typeof selector.getSettings === "function") {
+								return selector.getSettings();
+							}
+						}
+						return null;
+					}
 					acf.add_filter("color_picker_args", function(args, $field) {
-						args.palettes = %s;
+						const settings = getEditorSettings();
+						if (settings && Array.isArray(settings.colors) && settings.colors.length) {
+							args.palettes = settings.colors.map(x => x.color);
+						} else if (Array.isArray(fallbackPalette) && fallbackPalette.length) {
+							args.palettes = fallbackPalette;
+						}
 						return args;
 					});
 				})(jQuery);
 			</script>',
 			$color_palette
 		);
-	}
-
-	/**
-	 * Add theme.json colors to acf color picker.
-	 */
-	public function add_theme_colors_to_acf_color_picker() {
-		echo '<script type="text/javascript">
-			(function($) {
-				if (typeof wp !== "undefined" && typeof wp.data !== "undefined") {
-					acf.add_filter("color_picker_args", function($args, $field) {
-						const $settings = wp.data.select("core/editor").getEditorSettings();
-						$args.palettes = $settings.colors.map(x => x.color);
-						return $args;
-					});
-				}
-			})(jQuery);
-		</script>';
 	}
 
 	/**

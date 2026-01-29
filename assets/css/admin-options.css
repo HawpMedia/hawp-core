@@ -22,6 +22,92 @@
 }
 
 /*--------------------------------------------------------------
+# HAWP Tabs
+--------------------------------------------------------------*/
+.hm-tab-panel { display: none; }
+.hm-tab-panel.is-active { display: block; }
+
+/*--------------------------------------------------------------
+# HM style layout (left nav only)
+--------------------------------------------------------------*/
+.hm-wrap.hm-theme-options {
+	/* --wpr-nav-width: 280px; */
+}
+.hm-wrap .hm-body {
+	display: flex;
+	gap: 24px;
+}
+.hm-Header {
+	display: flex;
+    flex-direction: column;
+    flex: 0 0 225px;
+}
+.hm-Header-logo {
+	padding: 32px 0 24px;
+    text-align: center;
+}
+.hm-Header-logo-text {
+	font-size: 18px;
+	font-weight: 700;
+	color: #1e1e1e;
+	margin-bottom: 16px;
+}
+.hm-Header-nav {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+.hm-menuItem {
+	display: block;
+	padding: 12px 14px;
+	border-radius: 6px;
+	text-decoration: none;
+	border: 1px solid transparent;
+	color: #1e1e1e;
+	background: #f7f7f7;
+	transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.hm-menuItem:hover {
+	border-color: #d0d7de;
+}
+.hm-menuItem.isActive {
+	border-color: #2271b1;
+	background: #e9f2fb;
+}
+.hm-menuItem-title {
+	font-weight: 600;
+	font-size: 14px;
+	margin: 0 0 2px;
+}
+.hm-menuItem-description {
+	font-size: 12px;
+	color: #4a5568;
+}
+.hm-Header-footer {
+	margin-top: auto;
+    padding: 48px 20px 0;
+    font-size: 0.6875rem;
+    line-height: 4.3636363636;
+    color: #666;
+    opacity: .6;
+    font-weight: bold;
+}
+.hm-Content {
+	position: relative;
+    background: #fff;
+    padding: 32px 24px;
+    flex: 1 1 auto;
+    max-width: 1230px;
+}
+.hm-Content.isNotFull {
+	max-width: 960px;
+    z-index: 1000;
+}
+.hm-Page {
+	margin-bottom: 32px;
+}
+
+/*--------------------------------------------------------------
 # HTML Elements
 --------------------------------------------------------------*/
 code {
@@ -774,32 +860,6 @@ code {
 }
 .hawp-svg-controls input[type="text"] {
 	flex: 1;
-}
-
-.hm-admin-page .notice {
-    position: relative;
-    box-sizing: border-box;
-    min-height: 48px;
-    margin-top: 0 !important;
-    margin-right: 0 !important;
-    margin-bottom: 16px !important;
-    margin-left: 0 !important;
-    padding-top: 13px !important;
-    padding-right: 16px;
-    padding-bottom: 12px !important;
-    padding-left: 16px !important;
-    background-color: #e7eff9;
-    border-width: 1px;
-    border-style: solid;
-    border-color: #9dbaee;
-    border-radius: 8px;
-    box-shadow: 0px 1px 2px rgba(16, 24, 40, .1);
-    color: #344054;
-}
-
-.hm-admin-page .notice.notice-success {
-    background-color: #edf7ef;
-    border-color: #b6deb9;
 }
 
 .hm-admin-page .acf-form-submit {

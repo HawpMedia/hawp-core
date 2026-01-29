@@ -10,7 +10,7 @@ if (!class_exists('Hawp_Theme_Options')):
 class Hawp_Theme_Options {
     private $option_prefix;
     private $option_group = 'hawp_theme_options';
-    private $page_slug = 'hm-theme-options';
+    private $page_slug = 'hawptheme';
     private $tab_pages = [
         'general' => 'General',
         'integration' => 'Integration',
@@ -22,6 +22,7 @@ class Hawp_Theme_Options {
     ];
     private $current_tab;
     private $field_registry = [];
+    private $suppress_admin_header = false;
 
     /**
      * Sanitization rules for different field types
@@ -57,9 +58,8 @@ class Hawp_Theme_Options {
         add_action('admin_menu', [$this, 'add_options_pages']);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts']);
-        add_action('in_admin_header', [$this, 'render_admin_header']);
         add_filter('admin_body_class', [$this, 'add_admin_body_class']);
-        add_action('admin_notices', [$this, 'disable_admin_notices'], 1);
+        //add_action('admin_notices', [$this, 'disable_admin_notices'], 1);
     }
 
     /**
@@ -67,9 +67,9 @@ class Hawp_Theme_Options {
      */
     public function disable_admin_notices() {
         $screen = get_current_screen();
+        // Allow notices on the Hawp Core options page (needed for ACF save messages and WP notices).
         if (strpos($screen->id, $this->page_slug) !== false) {
-            remove_all_actions('admin_notices');
-            remove_all_actions('all_admin_notices');
+            return;
         }
     }
 
@@ -77,7 +77,7 @@ class Hawp_Theme_Options {
      * Add theme options pages.
      */
     public function add_options_pages() {
-        // Add the main page as a top-level menu item
+        // Add as top-level menu (keeps original icon placement) while still using hash-based tabs.
         add_menu_page(
             __('Theme Options'),
             hawp_theme()::$theme['name'],
@@ -87,18 +87,6 @@ class Hawp_Theme_Options {
             'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTAgNDMuNSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+PGNsaXBQYXRoIGlkPSJhIj48cGF0aCBkPSJtMCAwaDUwdjQzLjVoLTUweiI+PC9wYXRoPjwvY2xpcFBhdGg+PGcgY2xpcC1wYXRoPSJ1cmwoI2EpIiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Im0zNS44IDIwLjA5YzYuNDUuNzQgMy42MSA0Ljg5LTEuNzggNi42NiAzLjU3LTUuMy43Ny0zLjkzLTcuMDUtNi4yMSAxMy4yNS00LjQgMTMuMi05LjkyIDEyLjUtMTQuMTItMS4yNC0yLjQ0LTMuMi00LjQzLTEuNzktNi40My45Ny41IDIuNjYgMi4xNyAzLjEyIDMuMDIgMi44My40NSA0LjY5IDMuMTEgOS4xNyA1LjQxLjA3LjI0LS4xIDEuNC0xLjI1IDEuODYtMS40OC41OS0zLjIxLS41MS00LjgzIDEuMTItMS4wNSAxLjA2LTEuMjQgMy4wOC0yLjE5IDQuMzYtMS41NCAyLjEzLTMuOTcgMy40NS01LjkxIDQuMzJ6Ij48L3BhdGg+PHBhdGggZD0ibTM2Ljg0IDkuMzhjMCAuNTctLjkxIDUuMDEtNy4xMyA3LTIuNjUuNzItNS40MS42OS04LjYzLS42IDguMTIgOC42OC0uMTMgMTEuNTEtMi44MSAxNy41LS42NiAxLjc5Ljg2IDUuMDQuODggNi43NC0uMDYgMS44MS0xLjQ0IDMuMy0zLjI0IDMuNDkuMDctLjU0LjUyLTMuMjYuMzItNC4zMy0uMjMtMS4yMS0xLjM4LTIuOTktMS42MS00LjYyLS40LTIuOSAyLjc5LTYuMDEgMy4yNC04LjE3LjE3LS43OS0uMzYtMS44LTEuMTEtMy4wMi0uNzktMS4yNy0xLjkyLTIuMzItMi4wNC0yLjI4LS41OS4zMS0xLjUgMi4zMS0xLjgxIDMuMTctMS4wMiAyLjc5LTIuNjggOC42OC00LjU3IDEwLjk3LTEuMzggMS42Ny00Ljg3IDMuMzMtOC4zMSAyLjM0IDMuMDkgMCA2LjA1LTIuMzMgNi44NC00LjE3IDEuOTktNC42OS45NC0xMi42IDYuNTgtMTkuMzEgNi41LTYuOTkgMTMuMDUtMy44NiAxOC42LTMuNjcgMi44Mi4wOSA0Ljc3LTEgNC44Mi0xLjAzeiI+PC9wYXRoPjwvZz48L3N2Zz4=',
             98
         );
-
-        // Add hidden pages for each tab
-        foreach ($this->tab_pages as $tab_id => $tab_name) {
-            add_submenu_page(
-                null, // null parent makes it hidden
-                $tab_name . ' - Theme Options',
-                $tab_name,
-                'manage_options',
-                $this->page_slug . '-' . $tab_id,
-                [$this, 'render_options_page']
-            );
-        }
     }
 
     /**
@@ -660,39 +648,15 @@ class Hawp_Theme_Options {
      * Render admin header.
      */
     public function render_admin_header() {
-        if (!isset($_GET['page']) || !str_starts_with($_GET['page'], $this->page_slug)) {
+        if ($this->suppress_admin_header) {
+            return;
+        }
+        if (!isset($_GET['page']) || sanitize_text_field($_GET['page']) !== $this->page_slug) {
             return;
         }
 
-        // Exclude non-theme-option pages that share the hm-theme-options prefix
-        $current_page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
-        
-        // Check if this is a valid theme options tab
-        $is_valid_theme_options_page = false;
-        
-        // Check if it's the main theme options page
-        if ($current_page === $this->page_slug) {
-            $is_valid_theme_options_page = true;
-        } else {
-            // Check if it's a valid theme options tab
-            foreach ($this->tab_pages as $tab_id => $tab_name) {
-                if ($current_page === $this->page_slug . '-' . $tab_id) {
-                    $is_valid_theme_options_page = true;
-                    break;
-                }
-            }
-        }
-        
-        // If it's not a valid theme options page, don't render the header
-        if (!$is_valid_theme_options_page) {
-            return;
-        }
-
-        $current_page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : $this->page_slug;
-        $active_tab = str_replace($this->page_slug . '-', '', $current_page);
-        if ($active_tab === $this->page_slug) {
-            $active_tab = 'general';
-        }
+        $requested_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'general';
+        $active_tab = isset($this->tab_pages[$requested_tab]) ? $requested_tab : 'general';
 
         // Simple check if the custom settings field group exists
         $has_custom_fields = false;
@@ -723,10 +687,8 @@ class Hawp_Theme_Options {
                         }
                         $active_class = ($active_tab === $tab_id) ? 'active' : '';
                         $tab_class = $this->sanitize_tab_class($tab_name);
-                        $page_url = $tab_id === 'general' ? 
-                            admin_url('themes.php?page=' . $this->page_slug) :
-                            admin_url('themes.php?page=' . $this->page_slug . '-' . $tab_id);
-                        echo '<a href="' . esc_url($page_url) . '" class="hm-nav-tab ' . $active_class . ' ' . $tab_class . '">' . esc_html($tab_name) . '</a>';
+                            $page_url = admin_url('admin.php?page=' . $this->page_slug) . '#' . $tab_id;
+                            echo '<a data-tab="' . esc_attr($tab_id) . '" href="' . esc_url($page_url) . '" class="hm-nav-tab ' . $active_class . ' ' . $tab_class . '">' . esc_html($tab_name) . '</a>';
                     } ?>
 
                 <div class="hm-more hm-header-tab-hm-more" tabindex="0">
@@ -743,10 +705,8 @@ class Hawp_Theme_Options {
                             }
                             $active_class = ($active_tab === $tab_id) ? 'active' : '';
                             $tab_class = $this->sanitize_tab_class($tab_name);
-                            $page_url = $tab_id === 'general' ? 
-                                admin_url('themes.php?page=' . $this->page_slug) :
-                                admin_url('themes.php?page=' . $this->page_slug . '-' . $tab_id);
-                            echo '<li><a href="' . esc_url($page_url) . '" class="hm-nav-tab ' . $active_class . ' ' . $tab_class . '">' . esc_html($tab_name) . '</a></li>';
+                            $page_url = admin_url('admin.php?page=' . $this->page_slug) . '#' . $tab_id;
+                            echo '<li><a data-tab="' . esc_attr($tab_id) . '" href="' . esc_url($page_url) . '" class="hm-nav-tab ' . $active_class . ' ' . $tab_class . '">' . esc_html($tab_name) . '</a></li>';
                         } ?>
                         <!--<li class="hm-hawp-media"><a class="hm-nav-tab acf-header-tab-spanimg-classacf-wp-engine-pro-srchttp--hawpv6local-wp-content-plugins-advanced-custom-fields-pro-assets-images-wp-engine-horizontal-blacksvg-altwp-engine---spanspan-classacf-wp-engine-upsell-pill4-months-free-span" href="https://wpengine.com/plans/?coupon=freedomtocreate&amp;utm_source=acf_plugin&amp;utm_medium=referral&amp;utm_campaign=bx_prod_referral&amp;utm_content=acf_pro_plugin_topbar_dropdown_cta" target="_blank"><i class="acf-icon"></i><span><img class="acf-wp-engine-pro" src="http://hawpv6.local/wp-content/plugins/advanced-custom-fields-pro/assets/images/wp-engine-horizontal-black.svg" alt="WP Engine"></span><span class="acf-wp-engine-upsell-pill">4 Months Free</span></a></li>-->
                     </ul>
@@ -922,118 +882,163 @@ class Hawp_Theme_Options {
             return;
         }
 
-        $current_page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : $this->page_slug;
-        $this->current_tab = str_replace($this->page_slug . '-', '', $current_page);
-        if ($this->current_tab === $this->page_slug) {
-            $this->current_tab = 'general';
-        }
+        $requested_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'general';
+        $default_tab = isset($this->tab_pages[$requested_tab]) ? $requested_tab : 'general';
 
-        ?>
-        <div class="wrap hm-settings-wrap hm-theme-options">
-            <?php settings_errors(); ?>
+        // Prevent header action from rendering separately; we render inline below.
+        $this->suppress_admin_header = true;
 
-            <?php if ($this->current_tab === 'custom_settings' && function_exists('acf_form')) {
-                // Check if custom fields are registered
+        // Simple check if the custom settings field group exists
                 $has_custom_fields = false;
                 if (function_exists('acf_get_field_group')) {
                     $field_group = acf_get_field_group('group_custom_settings');
                     $has_custom_fields = ($field_group !== false);
                 }
 
-                echo '<div class="hm-settings-box">';
-                echo '<div class="hm-settings-box-header">';
-                echo '<h3>Custom Settings</h3>';
-                echo '</div>';
-                echo '<div class="hm-settings-box-content">';
-                
-                if (!$has_custom_fields) {
-                    echo '<div class="notice notice-info">';
-                    echo '<p>Not sure how you ended up here! If you\'re not a developer, there\'s nothing to see here. If you are, then continue reading. </p>';
-                    echo '<p>To add custom settings, navigate to your child theme\'s functions.php file and add them to the group <code>group_custom_settings</code> using the <code>acf_add_local_field_group</code> function.</p>';
-                    echo '<p>Here\'s an example of what this could look like:</p>';
-                    echo '<pre><code>function add_acf_custom_settings() {
-    acf_add_local_field_group([
-        \'key\' => \'group_custom_settings\',
-        \'title\' => \'Custom Settings\',
-        \'fields\' => [
-            [
-                \'key\' => \'field_custom_text\',
-                \'label\' => \'Custom Text Field\',
-                \'name\' => \'custom_text\',
-                \'type\' => \'text\',
-                \'instructions\' => \'Enter some custom text\',
-                \'required\' => 0,
-            ],
-            [
-                \'key\' => \'field_custom_image\',
-                \'label\' => \'Custom Image\',
-                \'name\' => \'custom_image\',
-                \'type\' => \'image\',
-                \'return_format\' => \'id\',
-                \'preview_size\' => \'thumbnail\',
-                \'library\' => \'all\',
-            ],
-        ],
-        \'location\' => [[[
-            \'param\' => \'options_page\',
-            \'operator\' => \'==\',
-            \'value\' => \'hm-theme-options-custom_settings\',
-        ]]],
-        \'menu_order\' => 0,
-        \'position\' => \'normal\',
-        \'style\' => \'default\',
-        \'label_placement\' => \'top\',
-        \'instruction_placement\' => \'label\',
-        \'hide_on_screen\' => \'\',
-        \'active\' => true,
-    ]);
-}
-add_action(\'acf/init\', \'add_acf_custom_settings\', 5);</code></pre>';
-                    echo '</div>';
-                } else {
-                    acf_form_head();
-                    acf_form([
-                        'post_id' => 'options',
-                        'field_groups' => ['group_custom_settings'],
-                        'form' => true,
-                        'return' => false,
-                        'submit_value' => 'Save Custom Options',
-                    ]);
-                }
-                echo '</div>';
-                echo '</div>';
-                
-            } else { ?>
-            
-                <form action="options.php" method="post">
-                    <?php
-                    // Use the active tab's option group
-                    settings_fields($this->option_group . '_' . $this->current_tab);
-                    ?>
-                    <div class="tab-content">
-                        <?php
-                        // Get the structure for the current tab
-                        $structure = $this->get_settings_structure();
-                        
-                        // Allow child themes to modify the structure
-                        $structure = apply_filters('hawp_theme_settings_structure', $structure, $this->current_tab);
-                        
-                        if (isset($structure[$this->current_tab])) {
-                            foreach ($structure[$this->current_tab] as $box) {
-                                $this->render_settings_box(
-                                    $box['title'],
-                                    $box['fields'],
-                                    $box['description']
-                                );
-                            }
-                        }
-                        ?>
-                    </div>
-                    <?php submit_button(); ?>
-                </form>
+        // Keep all tabs; custom_settings will render an info message if no fields are present.
+        $tabs_to_render = $this->tab_pages;
 
-            <?php } ?>
-            
+        if (function_exists('acf_form_head')) {
+            acf_form_head();
+        }
+
+        // Basic descriptions for nav items
+        $tab_descriptions = [
+            'general' => 'Site identity & counts',
+            'integration' => 'Code & embeds',
+            'scripts_styles' => 'Scripts & styles',
+            'utilities' => 'URLs & utilities',
+            'admin_ui' => 'Admin UI',
+            'svg_library' => 'SVG library',
+            'custom_settings' => 'Custom'
+        ];
+
+        ?>
+        <div class="hm-wrap wrap hm-theme-options">
+            <?php settings_errors(); ?>
+            <div class="hm-body">
+                <header class="hm-Header">
+                    <div class="hm-Header-logo">
+                        <div class="hm-Header-logo-text"><?php echo esc_html(hawp_theme()::$theme['name']); ?></div>
+                    </div>
+                    <div class="hm-Header-nav">
+                        <?php foreach ($tabs_to_render as $tab_id => $tab_name) :
+                            $is_active = ($tab_id === $default_tab);
+                            $desc = $tab_descriptions[$tab_id] ?? '';
+                            $tab_class = $this->sanitize_tab_class($tab_name);
+                            $page_url = admin_url('admin.php?page=' . $this->page_slug) . '#' . $tab_id;
+                            ?>
+                            <a data-tab="<?php echo esc_attr($tab_id); ?>" href="<?php echo esc_url($page_url); ?>" class="hm-nav-tab hm-menuItem <?php echo $is_active ? 'isActive' : ''; ?> <?php echo esc_attr($tab_class); ?>">
+                                <div class="hm-menuItem-title"><?php echo esc_html($tab_name); ?></div>
+                                <?php if ($desc): ?>
+                                    <div class="hm-menuItem-description"><?php echo esc_html($desc); ?></div>
+                                <?php endif; ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="hm-Header-footer">
+                        version <?php echo esc_html(hawp_theme()::$theme['version']); ?>
+                    </div>
+                </header>
+
+                <section class="hm-Content isNotFull">
+                    <div class="hm-tab-panels">
+                        <?php foreach ($tabs_to_render as $tab_id => $tab_name) :
+                            $this->current_tab = $tab_id;
+                            $is_active = ($tab_id === $default_tab);
+                            // Get the structure for the current tab
+                            $structure = $this->get_settings_structure();
+                            $structure = apply_filters('hawp_theme_settings_structure', $structure, $this->current_tab);
+                            ?>
+                            <div id="<?php echo esc_attr($tab_id); ?>" class="hm-tab-panel hm-Page <?php echo $is_active ? 'is-active' : ''; ?>" data-tab="<?php echo esc_attr($tab_id); ?>">
+                                <?php if ($tab_id === 'custom_settings' && function_exists('acf_form')) : ?>
+                                    <div class="hm-settings-box">
+                                        <div class="hm-settings-box-header">
+                                            <h3><?php echo esc_html($tab_name); ?></h3>
+                                        </div>
+                                        <div class="hm-settings-box-content">
+                                            <?php
+                                            if (!$has_custom_fields) {
+                                                echo '<div class="notice notice-info">';
+                                                echo '<p>Not sure how you ended up here! If you\'re not a developer, there\'s nothing to see here. If you are, then continue reading. </p>';
+                                                echo '<p>To add custom settings, navigate to your child theme\'s functions.php file and add them to the group <code>group_custom_settings</code> using the <code>acf_add_local_field_group</code> function.</p>';
+                                                echo '<p>Here\'s an example of what this could look like:</p>';
+                                                echo '<pre><code>function add_acf_custom_settings() {
+                                                    acf_add_local_field_group([
+                                                        \'key\' => \'group_custom_settings\',
+                                                        \'title\' => \'Custom Settings\',
+                                                        \'fields\' => [
+                                                            [
+                                                                \'key\' => \'field_custom_text\',
+                                                                \'label\' => \'Custom Text Field\',
+                                                                \'name\' => \'custom_text\',
+                                                                \'type\' => \'text\',
+                                                                \'instructions\' => \'Enter some custom text\',
+                                                                \'required\' => 0,
+                                                            ],
+                                                            [
+                                                                \'key\' => \'field_custom_image\',
+                                                                \'label\' => \'Custom Image\',
+                                                                \'name\' => \'custom_image\',
+                                                                \'type\' => \'image\',
+                                                                \'return_format\' => \'id\',
+                                                                \'preview_size\' => \'thumbnail\',
+                                                                \'library\' => \'all\',
+                                                            ],
+                                                        ],
+                                                        \'location\' => [[[
+                                                            \'param\' => \'options_page\',
+                                                            \'operator\' => \'==\',
+                                                            \'value\' => \'hawptheme\',
+                                                        ]]],
+                                                        \'menu_order\' => 0,
+                                                        \'position\' => \'normal\',
+                                                        \'style\' => \'default\',
+                                                        \'label_placement\' => \'top\',
+                                                        \'instruction_placement\' => \'label\',
+                                                        \'hide_on_screen\' => \'\',
+                                                        \'active\' => true,
+                                                    ]);
+                                                }
+                                                add_action(\'acf/init\', \'add_acf_custom_settings\', 5);</code></pre>';
+                                                echo '</div>';
+                                            } else {
+                                                $custom_return = admin_url('admin.php?page=' . $this->page_slug . '&tab=custom_settings#custom_settings');
+                                                acf_form([
+                                                    'post_id' => 'options',
+                                                    'field_groups' => ['group_custom_settings'],
+                                                    'form' => true,
+                                                    'return' => $custom_return,
+                                                    'submit_value' => 'Save Custom Options',
+                                                ]);
+                                            } ?>
+                                        </div>
+                                    </div>
+                                <?php else : ?>
+                                    <form action="options.php" method="post">
+                                        <?php
+                                            // Use the tab's option group
+                                            settings_fields($this->option_group . '_' . $tab_id);
+                                        ?>
+                                        <div class="tab-content">
+                                            <?php if (isset($structure[$tab_id])) {
+                                                foreach ($structure[$tab_id] as $box) {
+                                                    $this->render_settings_box(
+                                                        $box['title'],
+                                                        $box['fields'],
+                                                        $box['description']
+                                                    );
+                                                }
+                                            } ?>
+                                        </div>
+                                        <?php submit_button(); ?>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            </div>
         </div>
         <?php
     }
