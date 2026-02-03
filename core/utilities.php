@@ -20,7 +20,16 @@ if (!function_exists('get_theme_option_prefix')) {
 if (!function_exists('get_theme_option')) {
 	function get_theme_option($option_name) {
 		$prefix = get_theme_option_prefix();
-		return get_option($prefix . $option_name);
+		$key = $prefix . $option_name;
+		
+		// Primary source: Hawp Core options (used by built-in theme options). 
+		$value = get_option($key);
+		if ($value !== false) {
+			return $value;
+		}
+
+		// Secondary source: ACF options (used by custom ACF options group). 
+		return get_option('options_' . $key);
 	}
 }
 
