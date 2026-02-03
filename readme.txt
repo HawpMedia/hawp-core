@@ -2,7 +2,7 @@
 Requires at least: 6.4
 Tested up to: 6.8.2
 Requires PHP: 7.4
-Stable tag: 1.1.5
+Stable tag: 1.1.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,6 +11,13 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Hawp Core is Hawp Media's boilerplate starter theme for all custom websites
 
 == Changelog ==
+
+= 1.1.6 - Feb 3, 2026 =
+* **Enhancement**: Refactor theme option registration and sanitization to use a schema-driven registry.
+* **Enhancement**: Refresh the theme options UI with hash-based tabs, code editor fields, and improved media controls.
+* **Enhancement**: Sync the ACF color picker palette with editor/theme.json colors, with a fallback palette.
+* **Fix**: Correct `get_theme_option` fallback behavior for ACF-stored options.
+* **Maintenance**: Clean up custom settings example snippet formatting.
 
 = 1.1.5 - Jan 28, 2026 =
 * **Fix**: Avoid `/blog/` pagination and feed 404s by excluding reserved routes from the post prefix rewrite.
