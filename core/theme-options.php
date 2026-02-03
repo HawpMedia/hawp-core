@@ -90,13 +90,6 @@ class Hawp_Theme_Options {
     }
 
     /**
-     * Render section.
-     */
-    public function render_section($args) {
-        return '';
-    }
-
-    /**
      * Get sanitization callback for a field
      */
     private function get_sanitization_callback($field_id, $args = []) {
@@ -179,213 +172,50 @@ class Hawp_Theme_Options {
     }
 
     /**
-     * Get all fields for a tab
-     */
-    private function get_tab_fields($tab) {
-        return isset($this->field_registry[$tab]) ? $this->field_registry[$tab] : [];
-    }
-
-    /**
      * Register settings.
      */
     public function register_settings() {
-        // Register option groups for each tab
-        foreach ($this->tab_pages as $tab_id => $tab_name) {
-            register_setting($this->option_group . '_' . $tab_id, $this->option_group . '_' . $tab_id);
-        }
+        $schema = $this->get_settings_schema();
+        $registered = [];
 
-        // Register individual fields
-        $this->register_general_settings();
-        $this->register_integration_settings();
-        $this->register_scripts_styles_settings();
-        $this->register_utilities_settings();
-        $this->register_admin_ui_settings();
-        $this->register_svg_library_settings();
+        foreach ($schema as $tab_id => $boxes) {
+            foreach ($boxes as $box) {
+                foreach ($box['fields'] as $field) {
+                    if (isset($registered[$tab_id][$field['id']])) {
+                        continue;
+                    }
+                    $registered[$tab_id][$field['id']] = true;
+                    $this->register_field(
+                        $tab_id,
+                        $field['id'],
+                        $field['title'],
+                        $field['callback'],
+                        $field['args'] ?? []
+                    );
+                }
+            }
+        }
 
         // Migrate ACF options to new format
         $this->migrate_acf_options();
+    }
 
-        // Register sections and fields for each tab
-        foreach ($this->tab_pages as $tab_id => $tab_name) {
-            // Register section
-            add_settings_section(
-                $tab_id, 
-                '', // Empty title to hide the section title
-                [$this, 'render_section'], 
-                $this->page_slug
-            );
+    /**
+     * Get all field IDs from schema
+     */
+    private function get_all_field_ids() {
+        $schema = $this->get_settings_schema();
+        $field_ids = [];
 
-            // Register fields for this tab
-            $fields = $this->get_tab_fields($tab_id);
-            foreach ($fields as $field) {
-                add_settings_field(
-                    $field['id'],
-                    $field['title'],
-                    $field['callback'],
-                    $this->page_slug,
-                    $tab_id,
-                    $field['args']
-                );
+        foreach ($schema as $boxes) {
+            foreach ($boxes as $box) {
+                foreach ($box['fields'] as $field) {
+                    $field_ids[] = $field['id'];
+                }
             }
         }
-    }
 
-    /**
-     * Register general settings
-     */
-    private function register_general_settings() {
-        $this->register_field('general', 'logo', __('Logo'), [$this, 'render_image_field'], [
-            'description' => 'Used with <code>[logo]</code> shortcode.'
-        ]);
-        $this->register_field('general', 'header_bg_image', __('Default header background image'), [$this, 'render_image_field']);
-        $this->register_field('general', 'content_cta', __('Content CTA'), [$this, 'render_textarea_field'], [
-            'description' => 'This code will be used to generate the content that is placed in the <code>[content_cta]</code> shortcode.',
-            'rows' => 4
-        ]);
-        $this->register_field('general', 'catnum_posts', __('Number of Posts displayed on Category pages'), [$this, 'render_number_field'], [
-            'default' => 5
-        ]);
-        $this->register_field('general', 'archivenum_posts', __('Number of Posts displayed on Archive pages'), [$this, 'render_number_field'], [
-            'default' => 5
-        ]);
-        $this->register_field('general', 'searchnum_posts', __('Number of Posts displayed on Search pages'), [$this, 'render_number_field'], [
-            'default' => 5
-        ]);
-        $this->register_field('general', 'tagnum_posts', __('Number of Posts displayed on Tag pages'), [$this, 'render_number_field'], [
-            'default' => 5
-        ]);
-        $this->register_field('general', 'woocommerce_archive_num_posts', __('Number of Products displayed on WooCommerce archive pages'), [$this, 'render_number_field'], [
-            'default' => 9
-        ]);
-        $this->register_field('general', 'excerpt_length', __('Change the default excerpt length'), [$this, 'render_number_field'], [
-            'placeholder' => 'defaults to 55'
-        ]);
-    }
-
-    /**
-     * Register integration settings
-     */
-    private function register_integration_settings() {
-        $this->register_field('integration', 'google_fonts', __('Google Fonts embed URL'), [$this, 'render_url_field']);
-        $this->register_field('integration', 'head_code', __('Add code to the &lt;head&gt;'), [$this, 'render_textarea_field'], [
-            'rows' => 16
-        ]);
-        $this->register_field('integration', 'body_code', __('Add code to the &lt;body&gt;'), [$this, 'render_textarea_field'], [
-            'description' => 'Good for tracking codes such as google analytics.',
-            'rows' => 14
-        ]);
-        $this->register_field('integration', 'footer_code', __('Add code above the &lt;/body&gt;'), [$this, 'render_textarea_field'], [
-            'description' => 'Adds code to bottom of the site, before the closing body tag.',
-            'rows' => 14
-        ]);
-        $this->register_field('integration', 'disable_rankmath_modules', __('Disable RankMath Modules'), [$this, 'render_checkbox_field'], [
-            'description' => 'Disables unnecessary RankMath modules to improve performance.',
-            'default' => 1,
-            'type' => 'checkbox'
-        ]);
-    }
-
-    /**
-     * Register scripts & styles settings
-     */
-    private function register_scripts_styles_settings() {
-        $this->register_field('scripts_styles', 'dequeue_gutenberg_style', __('Gutenberg Stylesheet'), [$this, 'render_checkbox_field'], [
-            'description' => 'The default block builder stylesheet.',
-            'default' => 1,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('scripts_styles', 'enqueue_jquery_migrate', __('jQuery Migrate'), [$this, 'render_checkbox_field'], [
-            'description' => 'Preserves compatibility of jQuery for versions of jQuery older than 1.9.',
-            'default' => 0,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('scripts_styles', 'enqueue_lity_styles_scripts', __('Lity Lightbox'), [$this, 'render_checkbox_field'], [
-            'description' => 'A jQuery library for developers to create lightweight, accessible and responsive lightboxes.',
-            'default' => 0,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('scripts_styles', 'enqueue_swiper_styles_scripts', __('Swiper'), [$this, 'render_checkbox_field'], [
-            'default' => 0,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('scripts_styles', 'enqueue_owl_styles_scripts', __('Owl Carousel'), [$this, 'render_checkbox_field'], [
-            'description' => 'A jQuery library for developers to create responsive and touch enabled carousel sliders.',
-            'default' => 0,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('scripts_styles', 'enqueue_litepicker_styles_scripts', __('Litepicker'), [$this, 'render_checkbox_field'], [
-            'description' => 'A JavaScript library with no dependencies for developers to create lightweight date range pickers.',
-            'default' => 0,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('scripts_styles', 'enqueue_mixitup_styles_scripts', __('Mixitup'), [$this, 'render_checkbox_field'], [
-            'description' => 'A JavaScript library with no dependencies for developers to create animated filtering and sorting elements.',
-            'default' => 0,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('scripts_styles', 'enqueue_select2_styles_scripts', __('Select2'), [$this, 'render_checkbox_field'], [
-            'description' => 'The jQuery replacement for select boxes.',
-            'default' => 1,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('scripts_styles', 'enqueue_fontawesome_5_style', __('FontAwesome 5'), [$this, 'render_checkbox_field'], [
-            'default' => 0,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('scripts_styles', 'enqueue_fontawesome_6_style', __('FontAwesome 6'), [$this, 'render_checkbox_field'], [
-            'default' => 1,
-            'type' => 'checkbox'
-        ]);
-    }
-
-    /**
-     * Register utilities settings
-     */
-    private function register_utilities_settings() {
-        $this->register_field('utilities', 'force_ssl', __('Force SSL URL\'s'), [$this, 'render_checkbox_field'], [
-            'description' => 'Force SSL redirect on internal URL\'s if the Site Address URL includes HTTPS.',
-            'default' => 0,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('utilities', 'prefix_post_urls', __('Prefix Post URL\'s'), [$this, 'render_checkbox_field'], [
-            'description' => 'Rewrite post urls to include /blog/ before the post slug.',
-            'default' => 1,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('utilities', 'allow_svg_upload', __('Allow SVG Uploads'), [$this, 'render_checkbox_field'], [
-            'description' => 'Allow SVG files to be uploaded in the media library. Make sure you add the code below to the top of your svg file: <pre><code>&#x3C;?xml version="1.0" encoding="utf-8"?&#x3E;</code></pre>',
-            'default' => 1,
-            'type' => 'checkbox'
-        ]);
-    }
-
-    /**
-     * Register admin UI settings
-     */
-    private function register_admin_ui_settings() {
-        $this->register_field('admin_ui', 'login_logo', __('Login Logo'), [$this, 'render_image_field'], [
-            'description' => 'Appears on the login page. Should be a square to display properly. (160x160 recommended)'
-        ]);
-        $this->register_field('admin_ui', 'comments_admin_menu_item', __('Comments Menu Item'), [$this, 'render_checkbox_field'], [
-            'description' => 'Show or hide the Comments menu item.',
-            'default' => 0,
-            'type' => 'checkbox'
-        ]);
-        $this->register_field('admin_ui', 'wordpress_admin_item', __('WordPress Admin Items'), [$this, 'render_checkbox_field'], [
-            'description' => 'Show or hide the wordpress.org related widgets & menus.',
-            'default' => 0,
-            'type' => 'checkbox'
-        ]);
-    }
-
-    /**
-     * Register SVG library settings
-     */
-    private function register_svg_library_settings() {
-        $this->register_field('svg_library', 'svgs', __('SVG Library'), [$this, 'render_svg_library_field'], [
-            'type' => 'array',
-            'sanitize_callback' => [$this, 'sanitize_svg_array']
-        ]);
+        return array_values(array_unique($field_ids));
     }
 
     /**
@@ -393,74 +223,38 @@ class Hawp_Theme_Options {
      */
     private function migrate_acf_options() {
         // Check if migration has already been completed
-        $migration_version = '1.0';
+        $migration_version = '1.1';
         $migration_completed = get_option($this->option_prefix . 'acf_migration_completed');
         
         if ($migration_completed === $migration_version) {
             return; // Migration already completed
         }
 
-        // Field definitions for migration
-        $general_fields = [
-            'logo',
-            'header_bg_image',
-            'catnum_posts',
-            'archivenum_posts',
-            'searchnum_posts',
-            'tagnum_posts',
-            'woocommerce_archive_num_posts',
-            'excerpt_length',
-            'content_cta'
-        ];
-
-        $integration_fields = [
-            'google_fonts',
-            'head_code',
-            'body_code',
-            'footer_code'
-        ];
-
-        $scripts_styles_fields = [
-            'dequeue_gutenberg_style',
-            'enqueue_jquery_migrate',
-            'enqueue_lity_styles_scripts',
-            'enqueue_swiper_styles_scripts',
-            'enqueue_owl_styles_scripts',
-            'enqueue_litepicker_styles_scripts',
-            'enqueue_mixitup_styles_scripts',
-            'enqueue_select2_styles_scripts',
-            'enqueue_fontawesome_5_style',
-            'enqueue_fontawesome_6_style'
-        ];
-
-        $utilities_fields = [
-            'force_ssl',
-            'prefix_post_urls',
-            'allow_svg_upload'
-        ];
-
-        $admin_ui_fields = [
-            'login_logo',
-            'comments_admin_menu_item',
-            'wordpress_admin_item'
-        ];
-
         // Get all registered fields
-        $fields = array_merge(
-            $general_fields,
-            $integration_fields,
-            $scripts_styles_fields,
-            $utilities_fields,
-            $admin_ui_fields
-        );
+        $fields = $this->get_all_field_ids();
+
+        $legacy_option_prefixes = [
+            $this->option_prefix,
+            'hawp_theme_',
+        ];
 
         $migrated_count = 0;
         foreach ($fields as $field) {
-            $old_option = 'options_' . $this->option_prefix . $field;
             $new_option = $this->option_prefix . $field;
             
-            // Check if old option exists
-            $old_value = get_option($old_option);
+            // Check if legacy ACF options exist (options_{prefix}{field})
+            $old_value = false;
+            $old_option_used = null;
+            foreach ($legacy_option_prefixes as $legacy_prefix) {
+                $candidate_option = 'options_' . $legacy_prefix . $field;
+                $candidate_value = get_option($candidate_option);
+                if ($candidate_value !== false) {
+                    $old_value = $candidate_value;
+                    $old_option_used = $candidate_option;
+                    break;
+                }
+            }
+
             if ($old_value !== false) {
                 // Get current new option value
                 $new_value = get_option($new_option);
@@ -469,7 +263,9 @@ class Hawp_Theme_Options {
                 if ($new_value === false || empty($new_value)) {
                     if (update_option($new_option, $old_value)) {
                         // Only delete the old option if migration was successful
-                        delete_option($old_option);
+                        if ($old_option_used) {
+                            delete_option($old_option_used);
+                        }
                         $migrated_count++;
                     }
                 }
@@ -567,9 +363,8 @@ class Hawp_Theme_Options {
         <input type="hidden" name="<?php echo esc_attr($args['name']); ?>" id="<?php echo esc_attr($args['name']); ?>" value="<?php echo esc_attr($value); ?>" />
         <div class="hawp-image-controls">
             <input type="button" class="button button-secondary" value="<?php _e('Select Image'); ?>" onclick="hawpSelectImage('<?php echo esc_attr($args['name']); ?>')" />
-            <?php if ($value) : ?>
-                <input type="button" class="button button-link-delete" value="<?php _e('Remove Image'); ?>" onclick="hawpRemoveImage('<?php echo esc_attr($args['name']); ?>')" />
-            <?php endif; ?>
+            <?php $remove_style = $value ? '' : ' style="display:none;"'; ?>
+            <input type="button" class="button button-link-delete hawp-remove-image" value="<?php _e('Remove Image'); ?>" onclick="hawpRemoveImage('<?php echo esc_attr($args['name']); ?>')"<?php echo $remove_style; ?> />
         </div>
         <div id="<?php echo esc_attr($args['name']); ?>_preview" class="hawp-image-preview">
             <?php if ($value) : ?>
@@ -603,8 +398,16 @@ class Hawp_Theme_Options {
      */
     public function render_textarea_field($args) {
         $value = get_option($args['name']);
+        $classes = 'large-text code';
+        $code_editor_type = $args['code_editor'] ?? '';
+        if ($code_editor_type === true) {
+            $code_editor_type = 'text/html';
+        }
+        if (!empty($code_editor_type)) {
+            $classes .= ' hawp-code-editor';
+        }
         ?>
-        <textarea name="<?php echo esc_attr($args['name']); ?>" id="<?php echo esc_attr($args['name']); ?>" rows="<?php echo esc_attr($args['rows'] ?? 5); ?>" class="large-text code"><?php echo esc_textarea($value); ?></textarea>
+        <textarea name="<?php echo esc_attr($args['name']); ?>" id="<?php echo esc_attr($args['name']); ?>" rows="<?php echo esc_attr($args['rows'] ?? 5); ?>" class="<?php echo esc_attr($classes); ?>"<?php echo !empty($code_editor_type) ? ' data-code-editor="' . esc_attr($code_editor_type) . '"' : ''; ?>><?php echo esc_textarea($value); ?></textarea>
         <?php if (!empty($args['description'])) : ?>
             <p class="description"><?php echo $args['description']; ?></p>
         <?php endif; ?>
@@ -634,6 +437,7 @@ class Hawp_Theme_Options {
         ?>
 
         <label>
+            <input type="hidden" name="<?php echo esc_attr($args['name']); ?>" value="0" />
             <input type="checkbox" name="<?php echo esc_attr($args['name']); ?>" id="<?php echo esc_attr($args['name']); ?>" value="1" <?php checked($value, 1); ?> />
             <?php _e('Enable'); ?>
         </label>
@@ -764,26 +568,102 @@ class Hawp_Theme_Options {
     }
 
     /**
-     * Get settings structure configuration
+     * Get settings schema configuration
      */
-    private function get_settings_structure() {
-        return [
+    private function get_settings_schema() {
+        $schema = [
             'general' => [
                 [
                     'title' => 'Site Identity',
                     'description' => 'Configure your site\'s main identity elements',
-                    'fields' => ['logo', 'header_bg_image', 'content_cta']
+                    'fields' => [
+                        [
+                            'id' => 'logo',
+                            'title' => __('Logo'),
+                            'callback' => [$this, 'render_image_field'],
+                            'args' => [
+                                'description' => 'Used with <code>[logo]</code> shortcode.',
+                                'type' => 'image'
+                            ]
+                        ],
+                        [
+                            'id' => 'header_bg_image',
+                            'title' => __('Default header background image'),
+                            'callback' => [$this, 'render_image_field'],
+                            'args' => [
+                                'type' => 'image'
+                            ]
+                        ],
+                        [
+                            'id' => 'content_cta',
+                            'title' => __('Content CTA'),
+                            'callback' => [$this, 'render_textarea_field'],
+                            'args' => [
+                                'description' => 'This code will be used to generate the content that is placed in the <code>[content_cta]</code> shortcode.',
+                                'rows' => 4,
+                                'type' => 'code'
+                            ]
+                        ]
+                    ]
                 ],
                 [
                     'title' => 'Post Display Settings',
                     'description' => 'Control how many posts are displayed on different archive pages',
                     'fields' => [
-                        'catnum_posts',
-                        'archivenum_posts',
-                        'searchnum_posts',
-                        'tagnum_posts',
-                        'woocommerce_archive_num_posts',
-                        'excerpt_length'
+                        [
+                            'id' => 'catnum_posts',
+                            'title' => __('Number of Posts displayed on Category pages'),
+                            'callback' => [$this, 'render_number_field'],
+                            'args' => [
+                                'default' => 5,
+                                'type' => 'number'
+                            ]
+                        ],
+                        [
+                            'id' => 'archivenum_posts',
+                            'title' => __('Number of Posts displayed on Archive pages'),
+                            'callback' => [$this, 'render_number_field'],
+                            'args' => [
+                                'default' => 5,
+                                'type' => 'number'
+                            ]
+                        ],
+                        [
+                            'id' => 'searchnum_posts',
+                            'title' => __('Number of Posts displayed on Search pages'),
+                            'callback' => [$this, 'render_number_field'],
+                            'args' => [
+                                'default' => 5,
+                                'type' => 'number'
+                            ]
+                        ],
+                        [
+                            'id' => 'tagnum_posts',
+                            'title' => __('Number of Posts displayed on Tag pages'),
+                            'callback' => [$this, 'render_number_field'],
+                            'args' => [
+                                'default' => 5,
+                                'type' => 'number'
+                            ]
+                        ],
+                        [
+                            'id' => 'woocommerce_archive_num_posts',
+                            'title' => __('Number of Products displayed on WooCommerce archive pages'),
+                            'callback' => [$this, 'render_number_field'],
+                            'args' => [
+                                'default' => 9,
+                                'type' => 'number'
+                            ]
+                        ],
+                        [
+                            'id' => 'excerpt_length',
+                            'title' => __('Change the default excerpt length'),
+                            'callback' => [$this, 'render_number_field'],
+                            'args' => [
+                                'placeholder' => 'defaults to 55',
+                                'type' => 'number'
+                            ]
+                        ]
                     ]
                 ]
             ],
@@ -791,21 +671,64 @@ class Hawp_Theme_Options {
                 [
                     'title' => 'Google Fonts',
                     'description' => 'Add Google Fonts to your site',
-                    'fields' => ['google_fonts']
+                    'fields' => [
+                        [
+                            'id' => 'google_fonts',
+                            'title' => __('Google Fonts embed URL'),
+                            'callback' => [$this, 'render_url_field']
+                        ]
+                    ]
                 ],
                 [
                     'title' => 'Custom Code',
                     'description' => 'Add custom code to different parts of your site',
                     'fields' => [
-                        'head_code',
-                        'body_code',
-                        'footer_code'
+                        [
+                            'id' => 'head_code',
+                            'title' => __('Add code to the &lt;head&gt;'),
+                            'callback' => [$this, 'render_textarea_field'],
+                            'args' => [
+                                'rows' => 16,
+                                'code_editor' => 'text/html'
+                            ]
+                        ],
+                        [
+                            'id' => 'body_code',
+                            'title' => __('Add code to the &lt;body&gt;'),
+                            'callback' => [$this, 'render_textarea_field'],
+                            'args' => [
+                                'description' => 'Good for tracking codes such as google analytics.',
+                                'rows' => 14,
+                                'code_editor' => 'text/html'
+                            ]
+                        ],
+                        [
+                            'id' => 'footer_code',
+                            'title' => __('Add code above the &lt;/body&gt;'),
+                            'callback' => [$this, 'render_textarea_field'],
+                            'args' => [
+                                'description' => 'Adds code to bottom of the site, before the closing body tag.',
+                                'rows' => 14,
+                                'code_editor' => 'text/html'
+                            ]
+                        ]
                     ]
                 ],
                 [
                     'title' => 'Plugin Integrations',
                     'description' => 'Configure third-party plugin settings',
-                    'fields' => ['disable_rankmath_modules']
+                    'fields' => [
+                        [
+                            'id' => 'disable_rankmath_modules',
+                            'title' => __('Disable RankMath Modules'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'Disables unnecessary RankMath modules to improve performance.',
+                                'default' => 1,
+                                'type' => 'checkbox'
+                            ]
+                        ]
+                    ]
                 ]
             ],
             'scripts_styles' => [
@@ -813,28 +736,115 @@ class Hawp_Theme_Options {
                     'title' => 'Core Scripts & Styles',
                     'description' => 'Configure core WordPress scripts and styles',
                     'fields' => [
-                        'dequeue_gutenberg_style',
-                        'enqueue_jquery_migrate'
+                        [
+                            'id' => 'dequeue_gutenberg_style',
+                            'title' => __('Gutenberg Stylesheet'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'The default block builder stylesheet.',
+                                'default' => 1,
+                                'type' => 'checkbox'
+                            ]
+                        ],
+                        [
+                            'id' => 'enqueue_jquery_migrate',
+                            'title' => __('jQuery Migrate'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'Preserves compatibility of jQuery for versions of jQuery older than 1.9.',
+                                'default' => 0,
+                                'type' => 'checkbox'
+                            ]
+                        ]
                     ]
                 ],
                 [
                     'title' => 'UI Components',
                     'description' => 'Enable or disable various UI components and libraries',
                     'fields' => [
-                        'enqueue_lity_styles_scripts',
-                        'enqueue_swiper_styles_scripts',
-                        'enqueue_owl_styles_scripts',
-                        'enqueue_litepicker_styles_scripts',
-                        'enqueue_mixitup_styles_scripts',
-                        'enqueue_select2_styles_scripts'
+                        [
+                            'id' => 'enqueue_lity_styles_scripts',
+                            'title' => __('Lity Lightbox'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'A jQuery library for developers to create lightweight, accessible and responsive lightboxes.',
+                                'default' => 0,
+                                'type' => 'checkbox'
+                            ]
+                        ],
+                        [
+                            'id' => 'enqueue_swiper_styles_scripts',
+                            'title' => __('Swiper'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'default' => 0,
+                                'type' => 'checkbox'
+                            ]
+                        ],
+                        [
+                            'id' => 'enqueue_owl_styles_scripts',
+                            'title' => __('Owl Carousel'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'A jQuery library for developers to create responsive and touch enabled carousel sliders.',
+                                'default' => 0,
+                                'type' => 'checkbox'
+                            ]
+                        ],
+                        [
+                            'id' => 'enqueue_litepicker_styles_scripts',
+                            'title' => __('Litepicker'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'A JavaScript library with no dependencies for developers to create lightweight date range pickers.',
+                                'default' => 0,
+                                'type' => 'checkbox'
+                            ]
+                        ],
+                        [
+                            'id' => 'enqueue_mixitup_styles_scripts',
+                            'title' => __('Mixitup'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'A JavaScript library with no dependencies for developers to create animated filtering and sorting elements.',
+                                'default' => 0,
+                                'type' => 'checkbox'
+                            ]
+                        ],
+                        [
+                            'id' => 'enqueue_select2_styles_scripts',
+                            'title' => __('Select2'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'The jQuery replacement for select boxes.',
+                                'default' => 1,
+                                'type' => 'checkbox'
+                            ]
+                        ]
                     ]
                 ],
                 [
                     'title' => 'Icon Libraries',
                     'description' => 'Choose which icon library to use on your site',
                     'fields' => [
-                        'enqueue_fontawesome_5_style',
-                        'enqueue_fontawesome_6_style'
+                        [
+                            'id' => 'enqueue_fontawesome_5_style',
+                            'title' => __('FontAwesome 5'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'default' => 0,
+                                'type' => 'checkbox'
+                            ]
+                        ],
+                        [
+                            'id' => 'enqueue_fontawesome_6_style',
+                            'title' => __('FontAwesome 6'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'default' => 1,
+                                'type' => 'checkbox'
+                            ]
+                        ]
                     ]
                 ]
             ],
@@ -843,14 +853,43 @@ class Hawp_Theme_Options {
                     'title' => 'URL & Security Settings',
                     'description' => 'Configure URL structure and security settings',
                     'fields' => [
-                        'force_ssl',
-                        'prefix_post_urls'
+                        [
+                            'id' => 'force_ssl',
+                            'title' => __('Force SSL URL\'s'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'Force SSL redirect on internal URL\'s if the Site Address URL includes HTTPS.',
+                                'default' => 0,
+                                'type' => 'checkbox'
+                            ]
+                        ],
+                        [
+                            'id' => 'prefix_post_urls',
+                            'title' => __('Prefix Post URL\'s'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'Rewrite post urls to include /blog/ before the post slug.',
+                                'default' => 1,
+                                'type' => 'checkbox'
+                            ]
+                        ]
                     ]
                 ],
                 [
                     'title' => 'Media Settings',
                     'description' => 'Configure media upload settings',
-                    'fields' => ['allow_svg_upload']
+                    'fields' => [
+                        [
+                            'id' => 'allow_svg_upload',
+                            'title' => __('Allow SVG Uploads'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'Allow SVG files to be uploaded in the media library. Make sure you add the code below to the top of your svg file: <pre><code>&#x3C;?xml version="1.0" encoding="utf-8"?&#x3E;</code></pre>',
+                                'default' => 1,
+                                'type' => 'checkbox'
+                            ]
+                        ]
+                    ]
                 ]
             ],
             'admin_ui' => [
@@ -858,9 +897,35 @@ class Hawp_Theme_Options {
                     'title' => 'Admin Customization',
                     'description' => 'Customize the WordPress admin interface',
                     'fields' => [
-                        'login_logo',
-                        'comments_admin_menu_item',
-                        'wordpress_admin_item'
+                        [
+                            'id' => 'login_logo',
+                            'title' => __('Login Logo'),
+                            'callback' => [$this, 'render_image_field'],
+                            'args' => [
+                                'description' => 'Appears on the login page. Should be a square to display properly. (160x160 recommended)',
+                                'type' => 'image'
+                            ]
+                        ],
+                        [
+                            'id' => 'comments_admin_menu_item',
+                            'title' => __('Comments Menu Item'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'Show or hide the Comments menu item.',
+                                'default' => 0,
+                                'type' => 'checkbox'
+                            ]
+                        ],
+                        [
+                            'id' => 'wordpress_admin_item',
+                            'title' => __('WordPress Admin Items'),
+                            'callback' => [$this, 'render_checkbox_field'],
+                            'args' => [
+                                'description' => 'Show or hide the wordpress.org related widgets & menus.',
+                                'default' => 0,
+                                'type' => 'checkbox'
+                            ]
+                        ]
                     ]
                 ]
             ],
@@ -868,10 +933,47 @@ class Hawp_Theme_Options {
                 [
                     'title' => 'SVG Library',
                     'description' => 'Manage your SVG icon library',
-                    'fields' => ['svgs']
+                    'fields' => [
+                        [
+                            'id' => 'svgs',
+                            'title' => __('SVG Library'),
+                            'callback' => [$this, 'render_svg_library_field'],
+                            'args' => [
+                                'type' => 'array',
+                                'sanitize_callback' => [$this, 'sanitize_svg_array']
+                            ]
+                        ]
+                    ]
                 ]
             ]
         ];
+
+        return apply_filters('hawp_theme_settings_schema', $schema);
+    }
+
+    /**
+     * Get settings structure configuration
+     */
+    private function get_settings_structure() {
+        $schema = $this->get_settings_schema();
+        $structure = [];
+
+        foreach ($schema as $tab_id => $boxes) {
+            foreach ($boxes as $box) {
+                $fields = [];
+                foreach ($box['fields'] as $field) {
+                    $fields[] = $field['id'];
+                }
+
+                $structure[$tab_id][] = [
+                    'title' => $box['title'],
+                    'description' => $box['description'] ?? '',
+                    'fields' => $fields
+                ];
+            }
+        }
+
+        return $structure;
     }
 
     /**
@@ -1054,8 +1156,23 @@ echo '</div>';
         }
 
         wp_enqueue_media();
+        $code_editor_settings = null;
+        $script_deps = ['jquery'];
+        if (function_exists('wp_enqueue_code_editor')) {
+            $code_editor_settings = wp_enqueue_code_editor(['type' => 'text/html']);
+            if (!empty($code_editor_settings)) {
+                $script_deps[] = 'code-editor';
+            }
+        }
         wp_enqueue_style('hawp-admin-options', HM_URL . '/assets/css/admin-options.css');
-        wp_enqueue_script('hawp-admin-options', HM_URL . '/assets/js/admin-options.js', ['jquery'], null, true);
+        wp_enqueue_script('hawp-admin-options', HM_URL . '/assets/js/admin-options.js', $script_deps, null, true);
+        if (!empty($code_editor_settings)) {
+            wp_add_inline_script(
+                'hawp-admin-options',
+                'window.hawpCodeEditorSettings = ' . wp_json_encode(['text/html' => $code_editor_settings]) . ';',
+                'before'
+            );
+        }
     }
 
     /**
