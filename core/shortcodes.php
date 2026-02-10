@@ -79,9 +79,9 @@ class Hawp_Theme_Shortcodes {
 	}
 
 	/**
-	 * Shortcode: Get the site name.
+	 * Shortcode: Get the site title.
 	 *
-	 * [site_name]
+	 * [site_title]
 	 */
 	public function relative_site_title() {
 		if (function_exists('get_bloginfo')) {
