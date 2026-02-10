@@ -23,6 +23,7 @@ class Hawp_Github_Theme_Updater {
 		add_filter('http_request_args', [__CLASS__, 'add_github_headers'], 10, 2);
 		add_filter('upgrader_pre_download', [__CLASS__, 'pre_download'], 10, 4);
 		add_filter('upgrader_source_selection', [__CLASS__, 'maybe_rename_source'], 9, 4);
+		add_action('upgrader_process_complete', [__CLASS__, 'clear_caches_after_update'], 10, 2);
 	}
 
 	/**
@@ -298,6 +299,41 @@ class Hawp_Github_Theme_Updater {
 
 		self::log('source_selection: rename failed', ['from' => $source_base, 'to' => $theme_slug]);
 		return $source;
+	}
+
+	/**
+	 * Clear updater caches after a successful theme update.
+	 */
+	public static function clear_caches_after_update($upgrader, $hook_extra) {
+		if (!is_array($hook_extra)) {
+			return;
+		}
+		if (!empty($hook_extra['type']) && $hook_extra['type'] !== 'theme') {
+			return;
+		}
+		if (!empty($hook_extra['action']) && $hook_extra['action'] !== 'update') {
+			return;
+		}
+
+		$theme_slug = get_template();
+		if (!empty($hook_extra['theme']) && $hook_extra['theme'] !== $theme_slug) {
+			return;
+		}
+		if (!empty($hook_extra['themes']) && is_array($hook_extra['themes']) && !in_array($theme_slug, $hook_extra['themes'], true)) {
+			return;
+		}
+
+		// Clear the WordPress theme update transient and this updater's release cache.
+		delete_site_transient('update_themes');
+		$config = self::get_config();
+		$cache_key = 'hawp_core_github_release_' . md5(maybe_serialize($config));
+		delete_site_transient($cache_key);
+
+		if (function_exists('wp_clean_themes_cache')) {
+			wp_clean_themes_cache(true);
+		}
+
+		self::log('cache cleared after update', ['theme' => $theme_slug]);
 	}
 
 	protected static function log($message, $context = []) {

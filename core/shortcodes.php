@@ -100,10 +100,12 @@ class Hawp_Theme_Shortcodes {
 			'format' => 'link',
 			'class' => '',
 			'size' => 'full',
+			'url' => '',
 		], $atts);
 
+		$link_url = !empty($atts['url']) ? esc_url($atts['url']) : home_url('/');
 		$format = [
-			'link' => '<a href="'.home_url('/').'" rel="home" class="'.$atts['class'].'">%s</a>',
+			'link' => '<a href="'.$link_url.'" rel="home" class="'.$atts['class'].'">%s</a>',
 			'wrap' => '<span class="'.$atts['class'].'">%s</span>',
 			'raw' => '%s',
 		];
